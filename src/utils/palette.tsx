@@ -8,10 +8,17 @@ export const generatePaletteFromImage = (imageUrl: string) => {
       const canvas: HTMLCanvasElement = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const scale = 0.1;
-      const width = img.width * scale;
-      const height = img.height * scale;
+      const width = Math.ceil(img.width * scale);
+      const height = Math.ceil(img.height * scale);
+
+      if (width <= 0 || height <= 0) {
+        resolve({});
+        return;
+      }
+
       canvas.width = width;
       canvas.height = height;
+
       ctx?.drawImage(img, 0, 0, width, height);
 
       const imageData = ctx?.getImageData(0, 0, width, height).data;

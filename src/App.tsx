@@ -1325,7 +1325,6 @@ function App() {
     });
 
     const isLight = [Theme.Light, Theme.Snow, Theme.Arctic].includes(effectThemeForWindow);
-    invoke(Invokes.UpdateWindowEffect, { theme: isLight ? Theme.Light : Theme.Dark });
   }, [theme, adaptivePalette]);
 
   useEffect(() => {
@@ -2450,13 +2449,13 @@ function App() {
         if (isEffectActive) {
           const payload = event.payload;
           const isObject = typeof payload === 'object' && payload !== null;
-          
+
           setDenoiseModalState((prev) => ({
             ...prev,
             isProcessing: false,
             previewBase64: isObject ? payload.denoised : payload,
             originalBase64: isObject ? payload.original : null,
-            progressMessage: null
+            progressMessage: null,
           }));
         }
       }),
@@ -2466,7 +2465,7 @@ function App() {
             ...prev,
             isProcessing: false,
             error: String(event.payload),
-            progressMessage: null
+            progressMessage: null,
           }));
         }
       }),
@@ -2626,34 +2625,37 @@ function App() {
     }
   };
 
-  const handleApplyDenoise = useCallback(async (intensity: number) => {
-    if (!denoiseModalState.targetPath) return;
-    
-    setDenoiseModalState(prev => ({ 
-      ...prev, 
-      isProcessing: true, 
-      error: null, 
-      progressMessage: "Starting engine..." 
-    }));
-    
-    try {
-        await invoke(Invokes.ApplyDenoising, { 
-            path: denoiseModalState.targetPath,
-            intensity: intensity 
+  const handleApplyDenoise = useCallback(
+    async (intensity: number) => {
+      if (!denoiseModalState.targetPath) return;
+
+      setDenoiseModalState((prev) => ({
+        ...prev,
+        isProcessing: true,
+        error: null,
+        progressMessage: 'Starting engine...',
+      }));
+
+      try {
+        await invoke(Invokes.ApplyDenoising, {
+          path: denoiseModalState.targetPath,
+          intensity: intensity,
         });
-    } catch (err) {
-        setDenoiseModalState(prev => ({ 
-            ...prev, 
-            isProcessing: false, 
-            error: String(err) 
+      } catch (err) {
+        setDenoiseModalState((prev) => ({
+          ...prev,
+          isProcessing: false,
+          error: String(err),
         }));
-    }
-  }, [denoiseModalState.targetPath]);
+      }
+    },
+    [denoiseModalState.targetPath],
+  );
 
   const handleSaveDenoisedImage = async (): Promise<string> => {
-    if (!denoiseModalState.targetPath) throw new Error("No target path");
+    if (!denoiseModalState.targetPath) throw new Error('No target path');
     const savedPath = await invoke<string>(Invokes.SaveDenoisedImage, {
-        originalPathStr: denoiseModalState.targetPath
+      originalPathStr: denoiseModalState.targetPath,
     });
     await refreshImageList();
     return savedPath;
@@ -3365,26 +3367,23 @@ function App() {
             onClick: () => handleCreateVirtualCopy(finalSelection[0]),
           },
           {
-<<<<<<< HEAD
-            disabled: selectionCount < 2 || selectionCount > 30,
-=======
             label: 'Denoise',
             icon: Wand2,
             disabled: !isSingleSelection,
             onClick: () => {
-                setDenoiseModalState({
-                    isOpen: true,
-                    isProcessing: false,
-                    previewBase64: null,
-                    error: null,
-                    targetPath: finalSelection[0],
-                    progressMessage: null
-                });
-            }
+              setDenoiseModalState({
+                isOpen: true,
+                isProcessing: false,
+                previewBase64: null,
+                error: null,
+                targetPath: finalSelection[0],
+                progressMessage: null,
+              });
+            },
           },
           {
-            disabled: selectionCount < 2  || selectionCount > 30,
->>>>>>> 92cfc611e22a119d337e3a4502751e370cfcc807
+            disabled: selectionCount < 2 || selectionCount > 30,
+
             icon: Images,
             label: stitchLabel,
             onClick: () => {
@@ -4150,9 +4149,9 @@ function App() {
         onSave={handleSavePanorama}
         progressMessage={panoramaModalState.progressMessage}
       />
-      <DenoiseModal 
+      <DenoiseModal
         isOpen={denoiseModalState.isOpen}
-        onClose={() => setDenoiseModalState(prev => ({ ...prev, isOpen: false }))}
+        onClose={() => setDenoiseModalState((prev) => ({ ...prev, isOpen: false }))}
         onDenoise={handleApplyDenoise}
         onSave={handleSaveDenoisedImage}
         onOpenFile={handleImageSelect}

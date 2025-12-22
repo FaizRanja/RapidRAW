@@ -217,24 +217,31 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
           reader.onloadend = () => {
               const base64 = reader.result as string;
               
-              // We need to get dimensions to match App.tsx structure
-              const img = new Image();
-              img.onload = () => {
-                  resolve({
-                      data: base64,
-                      width: img.width,
-                      height: img.height
-                  } as any);
-              };
-              img.onerror = (e) => {
-                  console.warn('Failed to load image for dimensions', e);
-                  // Return 0 dimensions if failed, but still return data
-                  resolve({
-                      data: base64,
-                      width: 0,
-                      height: 0
-                  } as any);
-              };
+                  const img = new Image();
+                  img.onload = () => {
+                      resolve({
+                          data: base64,
+                          original_image_bytes: new Uint8Array(arrayBuffer),
+                          width: img.width,
+                          height: img.height,
+                          is_raw: false, // Adding these to match App.tsx expectations
+                          metadata: { adjustments: null },
+                          exif: {}
+                      } as any);
+                  };
+                  img.onerror = (e) => {
+                      console.warn('Failed to load image for dimensions', e);
+                      // Return 0 dimensions if failed, but still return data
+                      resolve({
+                          data: base64,
+                          original_image_bytes: new Uint8Array(arrayBuffer),
+                          width: 0,
+                          height: 0,
+                          is_raw: false,
+                          metadata: { adjustments: null },
+                          exif: {}
+                      } as any);
+                  };
               img.src = base64;
           };
           reader.onerror = (e) => {
@@ -373,15 +380,6 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
          } catch (e) {
              console.error('Error loading original image for preview simulation', e);
          }
-
-         // Fallback if loading fails
-         const base64 = "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwgJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPC4zNDL/2wBDAQkJCQwLDBgNDRgyIRwhMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjIyMjL/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD3+iiigD//2Q==";
-         const binaryString = window.atob(base64);
-         const bytes = new Uint8Array(binaryString.length);
-         for (let i = 0; i < binaryString.length; i++) {
-            bytes[i] = binaryString.charCodeAt(i);
-         }
-         emit('preview-update-final', bytes);
     }, 100);
     return null as any;
   }
