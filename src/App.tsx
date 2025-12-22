@@ -1,10 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { open } from '@tauri-apps/plugin-dialog';
-import { homeDir } from '@tauri-apps/api/path';
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { invoke, listen, open, homeDir, getCurrentWindow } from './utils/webShim';
 import debounce from 'lodash.debounce';
 import { ClerkProvider } from '@clerk/clerk-react';
 import clsx from 'clsx';
@@ -511,7 +507,7 @@ function App() {
             jsAdjustments: adjustments,
           });
           if (isEffectActive) {
-            const blob = new Blob([imageData], { type: 'image/jpeg' });
+            const blob = new Blob([imageData as unknown as BlobPart], { type: 'image/jpeg' });
             objectUrl = URL.createObjectURL(blob);
             setTransformedOriginalUrl(objectUrl);
           }
@@ -789,7 +785,7 @@ function App() {
         ?.flatMap((p: AiPatch) => p.subMasks)
         .find((sm: SubMask) => sm.id === subMaskId);
 
-      const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
+      const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as object) };
       updateSubMask(subMaskId, { parameters: mergedParameters });
     } catch (error) {
       console.error('Failed to generate AI subject mask:', error);
@@ -817,7 +813,7 @@ function App() {
         ?.flatMap((p: AiPatch) => p.subMasks)
         .find((sm: SubMask) => sm.id === subMaskId);
 
-      const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
+      const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as object) };
       updateSubMask(subMaskId, { parameters: mergedParameters });
     } catch (error) {
       console.error('Failed to generate AI foreground mask:', error);
@@ -845,7 +841,7 @@ function App() {
         ?.flatMap((p: AiPatch) => p.subMasks)
         .find((sm: SubMask) => sm.id === subMaskId);
 
-      const mergedParameters = { ...(subMask?.parameters || {}), ...newParameters };
+      const mergedParameters = { ...(subMask?.parameters || {}), ...(newParameters as object) };
       updateSubMask(subMaskId, { parameters: mergedParameters });
     } catch (error) {
       console.error('Failed to generate AI sky mask:', error);
@@ -893,7 +889,7 @@ function App() {
     });
 
     const { tags: searchTags, text: searchText, mode: searchMode } = searchCriteria;
-    const lowerCaseSearchText = searchText.trim().toLowerCase();
+    const lowerCaseSearchText = (searchText as string).trim().toLowerCase();
 
     const filteredBySearch =
       searchTags.length === 0 && lowerCaseSearchText === ''
@@ -1098,7 +1094,9 @@ function App() {
     const unlistenPromise = appWindow.onResized(checkFullscreen);
 
     return () => {
-      unlistenPromise.then((unlisten: any) => unlisten());
+      return () => {
+        // unlistenPromise.then((unlisten: any) => unlisten());
+      };
     };
   }, []);
 
@@ -1150,10 +1148,7 @@ function App() {
         setTheme(newSettings.theme);
       }
 
-      const {
-        searchCriteria,
-        ...settingsToSave
-      } = newSettings as any;
+      const { searchCriteria, ...settingsToSave } = newSettings as any;
       setAppSettings(newSettings);
       invoke(Invokes.SaveSettings, { settings: settingsToSave }).catch((err) => {
         console.error('Failed to save settings:', err);
@@ -1203,12 +1198,12 @@ function App() {
         if (settings?.pinnedFolders && settings.pinnedFolders.length > 0) {
           try {
             const trees = await invoke(Invokes.GetPinnedFolderTrees, { paths: settings.pinnedFolders });
-            setPinnedFolderTrees(trees);
+            setPinnedFolderTrees(trees as any[]);
           } catch (err) {
             console.error('Failed to load pinned folder trees:', err);
           }
         }
-        invoke('frontend_ready').catch(e => console.error("Failed to notify backend of readiness:", e));
+        invoke('frontend_ready').catch((e) => console.error('Failed to notify backend of readiness:', e));
       })
       .catch((err) => {
         console.error('Failed to load settings:', err);
@@ -1349,27 +1344,30 @@ function App() {
 
   const pinnedFolders = useMemo(() => appSettings?.pinnedFolders || [], [appSettings]);
 
-  const handleTogglePinFolder = useCallback(async (path: string) => {
-    if (!appSettings) return;
-    const currentPins = appSettings.pinnedFolders || [];
-    const isPinned = currentPins.includes(path);
-    const newPins = isPinned
-      ? currentPins.filter(p => p !== path)
-      : [...currentPins, path].sort((a, b) => a.localeCompare(b));
+  const handleTogglePinFolder = useCallback(
+    async (path: string) => {
+      if (!appSettings) return;
+      const currentPins = appSettings.pinnedFolders || [];
+      const isPinned = currentPins.includes(path);
+      const newPins = isPinned
+        ? currentPins.filter((p) => p !== path)
+        : [...currentPins, path].sort((a, b) => a.localeCompare(b));
 
-    if (!isPinned && path === currentFolderPath) {
-      handleActiveTreeSectionChange('pinned');
-    }
+      if (!isPinned && path === currentFolderPath) {
+        handleActiveTreeSectionChange('pinned');
+      }
 
-    handleSettingsChange({ ...appSettings, pinnedFolders: newPins });
+      handleSettingsChange({ ...appSettings, pinnedFolders: newPins });
 
-    try {
-      const trees = await invoke(Invokes.GetPinnedFolderTrees, { paths: newPins });
-      setPinnedFolderTrees(trees);
-    } catch (err) {
-      console.error('Failed to refresh pinned folders:', err);
-    }
-  }, [appSettings, handleSettingsChange]);
+      try {
+        const trees = await invoke(Invokes.GetPinnedFolderTrees, { paths: newPins });
+        setPinnedFolderTrees(trees);
+      } catch (err) {
+        console.error('Failed to refresh pinned folders:', err);
+      }
+    },
+    [appSettings, handleSettingsChange],
+  );
 
   const handleActiveTreeSectionChange = (section: string | null) => {
     setActiveTreeSection(section);
@@ -1493,15 +1491,7 @@ function App() {
         setIsViewLoading(false);
       }
     },
-    [
-      appSettings,
-      handleSettingsChange,
-      selectedImage,
-      rootPath,
-      sortCriteria.key,
-      pinnedFolders,
-      libraryViewMode,
-    ],
+    [appSettings, handleSettingsChange, selectedImage, rootPath, sortCriteria.key, pinnedFolders, libraryViewMode],
   );
 
   const handleLibraryRefresh = useCallback(() => {
@@ -1526,7 +1516,7 @@ function App() {
         freshExifData = await invoke(Invokes.ReadExifForPaths, { paths });
       }
 
-      setImageList((prevList) => {
+      setImageList((prevList: ImageFile[]) => {
         const prevMap = new Map(prevList.map((img) => [img.path, img]));
 
         return files.map((newFile) => {
@@ -1550,7 +1540,7 @@ function App() {
             setImageList((currentImageList) =>
               currentImageList.map((image) => {
                 if (exifDataMap[image.path] && !image.exif) {
-                   return { ...image, exif: exifDataMap[image.path] };
+                  return { ...image, exif: exifDataMap[image.path] };
                 }
                 return image;
               }),
@@ -1657,7 +1647,7 @@ function App() {
       setActiveMaskContainerId(null);
       setActiveAiPatchContainerId(null);
       setActiveAiSubMaskId(null);
-      setIsWbPickerActive(false); 
+      setIsWbPickerActive(false);
 
       if (transformWrapperRef.current) {
         transformWrapperRef.current.resetTransform(0);
@@ -1680,9 +1670,7 @@ function App() {
 
       if (activePath) {
         const physicalPath = activePath.split('?vc=')[0];
-        const isActiveImageDeleted = pathsToDelete.some(
-          (p) => p === activePath || p === physicalPath,
-        );
+        const isActiveImageDeleted = pathsToDelete.some((p) => p === activePath || p === physicalPath);
 
         if (isActiveImageDeleted) {
           const currentIndex = sortedImageList.findIndex((img) => img.path === activePath);
@@ -1698,7 +1686,7 @@ function App() {
                 .slice(0, currentIndex)
                 .reverse()
                 .find((img) => !pathsToDelete.includes(img.path));
-              
+
               if (prevCandidate) {
                 nextImagePath = prevCandidate.path;
               }
@@ -1717,9 +1705,7 @@ function App() {
 
         if (selectedImage) {
           const physicalPath = selectedImage.path.split('?vc=')[0];
-          const isFileBeingEditedDeleted = pathsToDelete.some(
-            (p) => p === selectedImage.path || p === physicalPath,
-          );
+          const isFileBeingEditedDeleted = pathsToDelete.some((p) => p === selectedImage.path || p === physicalPath);
 
           if (isFileBeingEditedDeleted) {
             if (nextImagePath) {
@@ -1806,7 +1792,7 @@ function App() {
       setIsFullScreenLoading(true);
       try {
         const imageData: Uint8Array = await invoke(Invokes.GenerateFullscreenPreview, { jsAdjustments: adjustments });
-        const blob = new Blob([imageData], { type: 'image/jpeg' });
+        const blob = new Blob([imageData as unknown as BlobPart], { type: 'image/jpeg' });
         url = URL.createObjectURL(blob);
         setFullScreenUrl(url);
       } catch (e) {
@@ -1990,43 +1976,49 @@ function App() {
     [multiSelectedPaths, selectedImage, libraryActivePath, imageList],
   );
 
-  const getCommonTags = useCallback((paths: string[]): { tag: string; isUser: boolean }[] => {
-    if (paths.length === 0) return [];
-    const imageFiles = imageList.filter((img) => paths.includes(img.path));
-    if (imageFiles.length === 0) return [];
+  const getCommonTags = useCallback(
+    (paths: string[]): { tag: string; isUser: boolean }[] => {
+      if (paths.length === 0) return [];
+      const imageFiles = imageList.filter((img) => paths.includes(img.path));
+      if (imageFiles.length === 0) return [];
 
-    const allTagsSets = imageFiles.map((img) => {
-      const tagsWithPrefix = (img.tags || []).filter((t) => !t.startsWith('color:'));
-      return new Set(tagsWithPrefix);
-    });
+      const allTagsSets = imageFiles.map((img) => {
+        const tagsWithPrefix = (img.tags || []).filter((t) => !t.startsWith('color:'));
+        return new Set(tagsWithPrefix);
+      });
 
-    if (allTagsSets.length === 0) return [];
+      if (allTagsSets.length === 0) return [];
 
-    const commonTagsWithPrefix = allTagsSets.reduce((intersection, currentSet) => {
-      return new Set([...intersection].filter((tag) => currentSet.has(tag)));
-    });
+      const commonTagsWithPrefix = allTagsSets.reduce((intersection, currentSet) => {
+        return new Set([...intersection].filter((tag) => currentSet.has(tag)));
+      });
 
-    return Array.from(commonTagsWithPrefix)
-      .map((tag) => ({
-        tag: tag.startsWith('user:') ? tag.substring(5) : tag,
-        isUser: tag.startsWith('user:'),
-      }))
-      .sort((a, b) => a.tag.localeCompare(b.tag));
-  }, [imageList]);
+      return Array.from(commonTagsWithPrefix)
+        .map((tag) => ({
+          tag: tag.startsWith('user:') ? tag.substring(5) : tag,
+          isUser: tag.startsWith('user:'),
+        }))
+        .sort((a, b) => a.tag.localeCompare(b.tag));
+    },
+    [imageList],
+  );
 
-  const handleTagsChanged = useCallback((changedPaths: string[], newTags: { tag: string; isUser: boolean }[]) => {
-    setImageList((prevList) =>
-      prevList.map((image) => {
-        if (changedPaths.includes(image.path)) {
-          const colorTags = (image.tags || []).filter((t) => t.startsWith('color:'));
-          const prefixedNewTags = newTags.map((t) => (t.isUser ? `user:${t.tag}` : t.tag));
-          const finalTags = [...colorTags, ...prefixedNewTags].sort();
-          return { ...image, tags: finalTags.length > 0 ? finalTags : null };
-        }
-        return image;
-      }),
-    );
-  }, [setImageList]);
+  const handleTagsChanged = useCallback(
+    (changedPaths: string[], newTags: { tag: string; isUser: boolean }[]) => {
+      setImageList((prevList) =>
+        prevList.map((image) => {
+          if (changedPaths.includes(image.path)) {
+            const colorTags = (image.tags || []).filter((t) => t.startsWith('color:'));
+            const prefixedNewTags = newTags.map((t) => (t.isUser ? `user:${t.tag}` : t.tag));
+            const finalTags = [...colorTags, ...prefixedNewTags].sort();
+            return { ...image, tags: finalTags.length > 0 ? finalTags : null };
+          }
+          return image;
+        }),
+      );
+    },
+    [setImageList],
+  );
 
   const closeConfirmModal = () => setConfirmModalState({ ...confirmModalState, isOpen: false });
 
@@ -2064,9 +2056,10 @@ function App() {
       invoke(Invokes.GenerateFullscreenPreview, {
         jsAdjustments: currentAdjustments,
       })
-        .then((imageData: Uint8Array) => {
+        .then((imageData: unknown) => {
+          const validData = imageData as Uint8Array;
           if (!request.cancelled) {
-            const blob = new Blob([imageData], { type: 'image/jpeg' });
+            const blob = new Blob([imageData as unknown as BlobPart], { type: 'image/jpeg' });
             const url = URL.createObjectURL(blob);
             setFullResolutionUrl(url);
             fullResCacheKeyRef.current = key;
@@ -2222,7 +2215,7 @@ function App() {
     [originalSize, baseRenderSize, handleFullResolutionLogic, adjustments.orientationSteps],
   );
 
-  const isAnyModalOpen = 
+  const isAnyModalOpen =
     isCreateFolderModalOpen ||
     isRenameFolderModalOpen ||
     isRenameFileModalOpen ||
@@ -2532,6 +2525,7 @@ function App() {
           progress: { current: 0, total: event.payload, stage: 'Initializing...' },
           suggestions: null,
           error: null,
+          pathsToCull: [],
         });
       }
     });
@@ -2683,7 +2677,7 @@ function App() {
       handleSelectSubfolder(parentDir, true);
       return;
     }
-    const isImageInList = imageList.some(image => image.path === initialFileToOpen);
+    const isImageInList = imageList.some((image) => image.path === initialFileToOpen);
     if (isImageInList) {
       handleImageSelect(initialFileToOpen);
       setInitialFileToOpen(null);
@@ -2691,7 +2685,15 @@ function App() {
       console.warn(`'open-with-file' target ${initialFileToOpen} not found in its directory after loading. Aborting.`);
       setInitialFileToOpen(null);
     }
-  }, [initialFileToOpen, appSettings, currentFolderPath, imageList, isViewLoading, handleSelectSubfolder, handleImageSelect]);
+  }, [
+    initialFileToOpen,
+    appSettings,
+    currentFolderPath,
+    imageList,
+    isViewLoading,
+    handleSelectSubfolder,
+    handleImageSelect,
+  ]);
 
   const handleGoHome = () => {
     setRootPath(null);
@@ -2788,47 +2790,51 @@ function App() {
 
   useEffect(() => {
     if (selectedImage && !selectedImage.isReady && selectedImage.path) {
-    let isEffectActive = true;
-    const loadFullImageData = async () => {
+      let isEffectActive = true;
+      const loadFullImageData = async () => {
         try {
-        const loadImageResult: any = await invoke(Invokes.LoadImage, { path: selectedImage.path });
-        if (!isEffectActive) {
+          const loadImageResult: any = await invoke(Invokes.LoadImage, { path: selectedImage.path });
+          if (!loadImageResult) {
+            console.error('Failed to load image result is null/undefined');
             return;
-        }
-        if (!isEffectActive) {
+          }
+          if (!isEffectActive) {
             return;
-        }
+          }
+          if (!isEffectActive) {
+            return;
+          }
 
-        const { width, height } = loadImageResult;
-        setOriginalSize({ width, height });
+          const { width, height } = loadImageResult;
+          setOriginalSize({ width, height });
 
-        if (appSettings?.editorPreviewResolution) {
+          if (appSettings?.editorPreviewResolution) {
             const maxSize = appSettings.editorPreviewResolution;
             const aspectRatio = width / height;
 
             if (width > height) {
-            const pWidth = Math.min(width, maxSize);
-            const pHeight = Math.round(pWidth / aspectRatio);
-            setPreviewSize({ width: pWidth, height: pHeight });
+              const pWidth = Math.min(width, maxSize);
+              const pHeight = Math.round(pWidth / aspectRatio);
+              setPreviewSize({ width: pWidth, height: pHeight });
             } else {
-            const pHeight = Math.min(height, maxSize);
-            const pWidth = Math.round(pHeight * aspectRatio);
-            setPreviewSize({ width: pWidth, height: pHeight });
+              const pHeight = Math.min(height, maxSize);
+              const pWidth = Math.round(pHeight * aspectRatio);
+              setPreviewSize({ width: pWidth, height: pHeight });
             }
-        } else {
+          } else {
             setPreviewSize({ width: 0, height: 0 });
-        }
+          }
 
-        setIsFullResolution(false);
-        setFullResolutionUrl(null);
-        fullResCacheKeyRef.current = null;
+          setIsFullResolution(false);
+          setFullResolutionUrl(null);
+          fullResCacheKeyRef.current = null;
 
-        const blob = new Blob([loadImageResult.original_image_bytes], { type: 'image/jpeg' });
-        const originalUrl = URL.createObjectURL(blob);
+          const blob = new Blob([loadImageResult.original_image_bytes], { type: 'image/jpeg' });
+          const originalUrl = URL.createObjectURL(blob);
 
-        setSelectedImage((currentSelected: SelectedImage | null) => {
+          setSelectedImage((currentSelected: SelectedImage | null) => {
             if (currentSelected && currentSelected.path === selectedImage.path) {
-            return {
+              return {
                 ...currentSelected,
                 exif: loadImageResult.exif,
                 height: loadImageResult.height,
@@ -2837,41 +2843,38 @@ function App() {
                 metadata: loadImageResult.metadata,
                 originalUrl: originalUrl,
                 width: loadImageResult.width,
-            };
+              };
             }
             return currentSelected;
-        });
+          });
 
-        let initialAdjusts;
-        if (loadImageResult.metadata.adjustments && !loadImageResult.metadata.adjustments.is_null) {
+          let initialAdjusts;
+          if (loadImageResult.metadata?.adjustments && !loadImageResult.metadata.adjustments.is_null) {
             initialAdjusts = normalizeLoadedAdjustments(loadImageResult.metadata.adjustments);
-        } else {
+          } else {
             initialAdjusts = {
-            ...INITIAL_ADJUSTMENTS,
-            aspectRatio: loadImageResult.width / loadImageResult.height,
+              ...INITIAL_ADJUSTMENTS,
+              aspectRatio: loadImageResult.width / loadImageResult.height,
             };
-        }
-        if (loadImageResult.metadata.adjustments && !loadImageResult.metadata.adjustments.is_null) {
-            initialAdjusts = normalizeLoadedAdjustments(loadImageResult.metadata.adjustments);
-        }
-        setLiveAdjustments(initialAdjusts);
-        resetAdjustmentsHistory(initialAdjusts);
+          }
+          setLiveAdjustments(initialAdjusts);
+          resetAdjustmentsHistory(initialAdjusts);
         } catch (err) {
-        if (isEffectActive) {
+          if (isEffectActive) {
             console.error('Failed to load image:', err);
             setError(`Failed to load image: ${err}`);
             setSelectedImage(null);
-        }
+          }
         } finally {
-        if (isEffectActive) {
+          if (isEffectActive) {
             setIsViewLoading(false);
+          }
         }
-        }
-    };
-    loadFullImageData();
-    return () => {
+      };
+      loadFullImageData();
+      return () => {
         isEffectActive = false;
-    };
+      };
     }
   }, [selectedImage?.path, selectedImage?.isReady, resetAdjustmentsHistory, appSettings?.editorPreviewResolution]);
 
@@ -2970,7 +2973,14 @@ function App() {
           setError(`Failed to reset adjustments: ${err}`);
         });
     },
-    [multiSelectedPaths, libraryActivePath, selectedImage, adjustments.rating, resetAdjustmentsHistory, debouncedSetHistory],
+    [
+      multiSelectedPaths,
+      libraryActivePath,
+      selectedImage,
+      adjustments.rating,
+      resetAdjustmentsHistory,
+      debouncedSetHistory,
+    ],
   );
 
   const handleImportClick = useCallback(
@@ -3117,9 +3127,7 @@ function App() {
       const lastDotIndex = selectedPath.lastIndexOf('.');
       if (lastDotIndex === -1) return false;
       const basePath = selectedPath.substring(0, lastDotIndex);
-      return imageList.some(
-        (image) => image.path.startsWith(basePath + '.') && image.path !== selectedPath,
-      );
+      return imageList.some((image) => image.path.startsWith(basePath + '.') && image.path !== selectedPath);
     });
 
     let deleteSubmenu;
@@ -3275,7 +3283,7 @@ function App() {
             onClick: () => handleCreateVirtualCopy(finalSelection[0]),
           },
           {
-            disabled: selectionCount < 2  || selectionCount > 30,
+            disabled: selectionCount < 2 || selectionCount > 30,
             icon: Images,
             label: stitchLabel,
             onClick: () => {
@@ -3300,7 +3308,7 @@ function App() {
             icon: LayoutTemplate,
             label: collageLabel,
             onClick: () => {
-              const imagesForCollage = imageList.filter(img => finalSelection.includes(img.path));
+              const imagesForCollage = imageList.filter((img) => finalSelection.includes(img.path));
               setCollageModalState({
                 isOpen: true,
                 sourceImages: imagesForCollage,
@@ -3438,7 +3446,9 @@ function App() {
 
         const currentPins = appSettings?.pinnedFolders || [];
         if (currentPins.includes(oldPath)) {
-          const newPins = currentPins.map(p => (p === oldPath ? newPath : p)).sort((a, b) => a.localeCompare(b));
+          const newPins = currentPins
+            .map((p: any) => (p === oldPath ? newPath : p))
+            .sort((a: any, b: any) => a.localeCompare(b));
           newAppSettings.pinnedFolders = newPins;
           settingsChanged = true;
         }
@@ -3448,7 +3458,6 @@ function App() {
         }
 
         await refreshAllFolderTrees();
-
       } catch (err) {
         setError(`Failed to rename folder: ${err}`);
       }
@@ -3680,7 +3689,6 @@ function App() {
               waveform={waveform}
               onDisplaySizeChange={handleDisplaySizeChange}
               onInitialFitScale={setInitialFitScale}
-              onZoomChange={handleZoomChange}
               originalSize={originalSize}
               baseRenderSize={baseRenderSize}
               isFullResolution={isFullResolution}
@@ -4018,7 +4026,9 @@ function App() {
         isOpen={isCopyPasteSettingsModalOpen}
         onClose={() => setIsCopyPasteSettingsModalOpen(false)}
         settings={appSettings?.copyPasteSettings as CopyPasteSettings}
-        onSave={(newSettings) => handleSettingsChange({ ...appSettings, copyPasteSettings: newSettings } as AppSettings)}
+        onSave={(newSettings) =>
+          handleSettingsChange({ ...appSettings, copyPasteSettings: newSettings } as AppSettings)
+        }
       />
       <PanoramaModal
         error={panoramaModalState.error}
@@ -4065,7 +4075,9 @@ function App() {
       />
       <CullingModal
         isOpen={cullingModalState.isOpen}
-        onClose={() => setCullingModalState({ isOpen: false, progress: null, suggestions: null, error: null, pathsToCull: [] })}
+        onClose={() =>
+          setCullingModalState({ isOpen: false, progress: null, suggestions: null, error: null, pathsToCull: [] })
+        }
         progress={cullingModalState.progress}
         suggestions={cullingModalState.suggestions}
         error={cullingModalState.error}

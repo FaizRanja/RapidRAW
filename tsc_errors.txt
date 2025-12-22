@@ -1,0 +1,129 @@
+﻿src/App.tsx(514,36): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/App.tsx(792,66): error TS2698: Spread types may only be created from object types.
+src/App.tsx(820,66): error TS2698: Spread types may only be created from object types.
+src/App.tsx(848,66): error TS2698: Spread types may only be created from object types.
+src/App.tsx(1206,34): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1343,30): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1357,28): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/App.tsx(1368,28): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1392,30): error TS2345: Argument of type 'Set<string | null>' is not assignable to parameter of type 'SetStateAction<Set<string>>'.
+  Type 'Set<string | null>' is not assignable to type 'Set<string>'.
+    Type 'string | null' is not assignable to type 'string'.
+      Type 'null' is not assignable to type 'string'.
+src/App.tsx(1809,32): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/App.tsx(1838,57): error TS2339: Property 'copyPasteSettings' does not exist on type 'AppSettings'.
+src/App.tsx(2067,15): error TS2345: Argument of type '(imageData: Uint8Array) => void' is not assignable to parameter of type '(value: unknown) => void | PromiseLike<void>'.
+  Types of parameters 'imageData' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Uint8Array<ArrayBufferLike>'.
+src/App.tsx(2069,36): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/App.tsx(2530,30): error TS2345: Argument of type '{ isOpen: true; progress: { current: number; total: any; stage: string; }; suggestions: null; error: null; }' is not assignable to parameter of type 'SetStateAction<CullingModalState>'.
+  Property 'pathsToCull' is missing in type '{ isOpen: true; progress: { current: number; total: any; stage: string; }; suggestions: null; error: null; }' but required in type 'CullingModalState'.
+src/App.tsx(2648,28): error TS2345: Argument of type 'Set<unknown>' is not assignable to parameter of type 'SetStateAction<Set<string>>'.
+  Type 'Set<unknown>' is not assignable to type 'Set<string>'.
+    Type 'unknown' is not assignable to type 'string'.
+src/App.tsx(3441,43): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/App.tsx(3441,85): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/App.tsx(3441,88): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/App.tsx(3683,15): error TS2322: Type '{ activeAiPatchContainerId: string | null; activeAiSubMaskId: string | null; activeMaskContainerId: string | null; activeMaskId: string | null; activeRightPanel: Panel | null; ... 47 more ...; isLoadingFullRes: boolean; }' is not assignable to type 'IntrinsicAttributes & EditorProps'.
+  Property 'onZoomChange' does not exist on type 'IntrinsicAttributes & EditorProps'.
+src/App.tsx(4020,32): error TS2339: Property 'copyPasteSettings' does not exist on type 'AppSettings'.
+src/components/modals/CollageModal.tsx(217,34): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/components/modals/ConfirmModal.tsx(103,13): error TS2322: Type '{ children: string; className: string; onClick: () => void; variant: string; tabIndex: number; }' is not assignable to type 'IntrinsicAttributes & ButtonProps'.
+  Property 'tabIndex' does not exist on type 'IntrinsicAttributes & ButtonProps'.
+src/components/modals/CullingModal.tsx(209,56): error TS2339: Property 'stage' does not exist on type 'Progress'.
+src/components/modals/CullingModal.tsx(212,77): error TS18048: 'progress.current' is possibly 'undefined'.
+src/components/panel/CommunityPage.tsx(226,12): error TS2741: Property 'type' is missing in type '{ value: string; onChange: (e: any) => void; placeholder: string; className: string; }' but required in type 'InputProps'.
+src/components/panel/Editor.tsx(3,35): error TS7016: Could not find a declaration file for module 'react-image-crop'. 'D:/Blizon Project/rapidraw/RapidRAW/node_modules/react-image-crop/dist/index.umd.cjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-image-crop` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-image-crop';`
+src/components/panel/Editor.tsx(182,6): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/panel/editor/FullScreenViewer.tsx(115,13): error TS2322: Type '{ children: Element; doubleClick: any; limitToBounds: true; maxScale: number; minScale: number; onTransformed: (_: ReactZoomPanPinchRef, state: TransformState) => void; positionX: number; positionY: number; scale: number; }' is not assignable to type 'IntrinsicAttributes & Omit<ReactZoomPanPinchProps, "ref"> & RefAttributes<ReactZoomPanPinchContentRef>'.
+  Property 'positionX' does not exist on type 'IntrinsicAttributes & Omit<ReactZoomPanPinchProps, "ref"> & RefAttributes<ReactZoomPanPinchContentRef>'. Did you mean 'minPositionX'?
+src/components/panel/editor/ImageCanvas.tsx(2,23): error TS7016: Could not find a declaration file for module 'react-image-crop'. 'D:/Blizon Project/rapidraw/RapidRAW/node_modules/react-image-crop/dist/index.umd.cjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-image-crop` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-image-crop';`
+src/components/panel/editor/ImageCanvas.tsx(5,35): error TS7016: Could not find a declaration file for module 'react-image-crop'. 'D:/Blizon Project/rapidraw/RapidRAW/node_modules/react-image-crop/dist/index.umd.cjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-image-crop` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-image-crop';`
+src/components/panel/editor/ImageCanvas.tsx(333,23): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/components/panel/editor/ImageCanvas.tsx(1057,23): error TS2322: Type '"high-quality"' is not assignable to type 'ImageRendering | undefined'.
+src/components/panel/MainLibrary.tsx(23,42): error TS7016: Could not find a declaration file for module 'react-window'. 'D:/Blizon Project/rapidraw/RapidRAW/node_modules/react-window/dist/index.cjs.js' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-window` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-window';`
+src/components/panel/MainLibrary.tsx(687,21): error TS2345: Argument of type '(prev: SortCriteria) => { key: string; label?: string; order: string; }' is not assignable to parameter of type 'SortCriteria'.
+src/components/panel/MainLibrary.tsx(691,21): error TS2345: Argument of type '(prev: SortCriteria) => { order: SortDirection; key: string; label?: string; }' is not assignable to parameter of type 'SortCriteria'.
+src/components/panel/MainLibrary.tsx(1100,13): error TS2322: Type 'string[] | null' is not assignable to type 'string[]'.
+  Type 'null' is not assignable to type 'string[]'.
+src/components/panel/MainLibrary.tsx(1655,32): error TS7031: Binding element 'scrollOffset' implicitly has an 'any' type.
+src/components/panel/right/AIControls.tsx(196,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ centerX: number; centerY: number; radiusX: number; radiusY: number; rotation: number; feather: number; startX?: undefined; startY?: undefined; endX?: undefined; endY?: undefined; range?: undefined; lines?: undefined; maskDataBase64?: undefined; grow?: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+src/components/panel/right/AIPanel.tsx(185,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ centerX: number; centerY: number; radiusX: number; radiusY: number; rotation: number; feather: number; startX?: undefined; startY?: undefined; endX?: undefined; endY?: undefined; range?: undefined; lines?: undefined; maskDataBase64?: undefined; grow?: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+src/components/panel/right/ExportPanel.tsx(549,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/ExportPanel.tsx(559,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/ExportPanel.tsx(569,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/LibraryExportPanel.tsx(202,26): error TS2339: Property 'width' does not exist on type 'ImageFile'.
+src/components/panel/right/LibraryExportPanel.tsx(202,45): error TS2339: Property 'height' does not exist on type 'ImageFile'.
+src/components/panel/right/LibraryExportPanel.tsx(203,35): error TS2339: Property 'width' does not exist on type 'ImageFile'.
+src/components/panel/right/LibraryExportPanel.tsx(203,49): error TS2339: Property 'height' does not exist on type 'ImageFile'.
+src/components/panel/right/LibraryExportPanel.tsx(543,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/LibraryExportPanel.tsx(553,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/LibraryExportPanel.tsx(563,25): error TS2322: Type '{ label: string; min: number; max: number; step: number; value: number; onChange: (e: any) => void; disabled: boolean; defaultValue: number; }' is not assignable to type 'IntrinsicAttributes & SliderProps'.
+  Property 'disabled' does not exist on type 'IntrinsicAttributes & SliderProps'.
+src/components/panel/right/MaskControls.tsx(86,7): error TS2741: Property '[Mask.QuickEraser]' is missing in type '{ radial: { parameters: { key: string; label: string; min: number; max: number; step: number; multiplier: number; defaultValue: number; }[]; }; brush: { showBrushTools: boolean; }; linear: { parameters: never[]; }; ... 5 more ...; "ai-sky": { ...; }; }' but required in type 'Record<Mask, any>'.
+src/components/panel/right/MaskControls.tsx(181,34): error TS2345: Argument of type 'MaskAdjustments' is not assignable to parameter of type 'Adjustments'.
+  Type 'MaskAdjustments' is missing the following properties from type 'Adjustments': aiPatches, aspectRatio, centr├⌐, chromaticAberrationBlueYellow, and 23 more.
+src/components/panel/right/Masks.tsx(106,5): error TS2322: Type 'null' is not assignable to type 'Mask'.
+src/components/panel/right/Masks.tsx(185,5): error TS2322: Type 'null' is not assignable to type 'Mask'.
+src/components/panel/right/PresetsPanel.tsx(399,32): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/components/panel/right/PresetsPanel.tsx(459,32): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/components/panel/SettingsPanel.tsx(220,12): error TS2741: Property 'type' is missing in type '{ value: string; onChange: (e: any) => void; }' but required in type 'InputProps'.
+src/components/panel/SettingsPanel.tsx(798,35): error TS2322: Type '{ visible: { opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }; exit: { opacity: number; scale: number; transition: { duration: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/components/panel/SettingsPanel.tsx(1057,35): error TS2322: Type '{ readOnly: true; value: any; className: string; }' is not assignable to type 'IntrinsicAttributes & InputProps & RefAttributes<unknown>'.
+  Property 'readOnly' does not exist on type 'IntrinsicAttributes & InputProps & RefAttributes<unknown>'.
+src/context/TaggingSubMenu.tsx(91,19): error TS2322: Type '{ visible: { opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }; exit: { opacity: number; scale: number; transition: { duration: number; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; scale: number; transition: { type: string; stiffness: number; damping: number; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ type: string; stiffness: number; damping: number; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'type' are incompatible.
+                    Type 'string' is not assignable to type 'AnimationGeneratorType | undefined'.
+src/utils/adjustments.tsx(1,22): error TS7016: Could not find a declaration file for module 'react-image-crop'. 'D:/Blizon Project/rapidraw/RapidRAW/node_modules/react-image-crop/dist/index.umd.cjs' implicitly has an 'any' type.
+  Try `npm i --save-dev @types/react-image-crop` if it exists or add a new declaration (.d.ts) file containing `declare module 'react-image-crop';`

@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { open as openDialog, save as saveDialog } from '@tauri-apps/plugin-dialog';
+import { invoke, open as openDialog, save as saveDialog } from '../../../utils/webShim';
 import {
   DndContext,
   DragOverlay,
@@ -396,7 +395,7 @@ export default function PresetsPanel({
         const imageData: Uint8Array = await invoke(Invokes.GeneratePresetPreview, {
           jsAdjustments: fullPresetAdjustments,
         });
-        const blob = new Blob([imageData], { type: 'image/jpeg' });
+        const blob = new Blob([imageData as unknown as BlobPart], { type: 'image/jpeg' });
         const url = URL.createObjectURL(blob);
         setPreviews((prev: Record<string, string | null>) => {
           const oldUrl = prev[preset.id];
@@ -456,7 +455,7 @@ export default function PresetsPanel({
         const imageData: Uint8Array = await invoke(Invokes.GeneratePresetPreview, {
           jsAdjustments: fullPresetAdjustments,
         });
-        const blob = new Blob([imageData], { type: 'image/jpeg' });
+        const blob = new Blob([imageData as unknown as BlobPart], { type: 'image/jpeg' });
         const url = URL.createObjectURL(blob);
 
         setPreviews((prev: Record<string, string | null>) => {
@@ -654,7 +653,8 @@ export default function PresetsPanel({
       });
 
       if (typeof selectedPath === 'string') {
-        const isLegacy = selectedPath.toLowerCase().endsWith('.xmp') || selectedPath.toLowerCase().endsWith('.lrtemplate');
+        const isLegacy =
+          selectedPath.toLowerCase().endsWith('.xmp') || selectedPath.toLowerCase().endsWith('.lrtemplate');
 
         if (isLegacy) {
           await importLegacyPresetsFromFile(selectedPath);

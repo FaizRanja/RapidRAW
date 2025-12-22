@@ -110,6 +110,7 @@ const SUB_MASK_CONFIG: Record<Mask, any> = {
       { key: 'feather', label: 'Feather', min: 0, max: 100, step: 1, defaultValue: 0 },
     ],
   },
+  [Mask.QuickEraser]: { parameters: [] },
 };
 
 const BrushTools = ({ settings, onSettingsChange }: BrushToolsProps) => (
@@ -178,7 +179,7 @@ export default function MaskControls({
   updateSubMask,
 }: MaskControlsProps) {
   const { showContextMenu } = useContextMenu();
-  const { presets } = usePresets(editingMask.adjustments);
+  const { presets } = usePresets(editingMask.adjustments as any);
   const [isSettingsSectionOpen, setSettingsSectionOpen] = useState(true);
   const [copiedSectionAdjustments, setCopiedSectionAdjustments] = useState<CopiedSection | null>(null);
   const [collapsibleState, setCollapsibleState] = useState<any>({

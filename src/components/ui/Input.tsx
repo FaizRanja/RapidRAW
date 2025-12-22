@@ -7,10 +7,11 @@ interface InputProps {
   disabled?: boolean;
   id?: string;
   onBlur?(e: any): void;
-  onChange(e: any): void;
+  onChange?(e: any): void;
   onKeyDown?(e: any): void;
   placeholder?: string;
-  type: string;
+  type?: string;
+  readOnly?: boolean;
   value?: string;
 }
 

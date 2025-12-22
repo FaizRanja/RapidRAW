@@ -3,7 +3,7 @@ import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { Crop, PercentCrop } from 'react-image-crop';
 import { Loader2 } from 'lucide-react';
 import clsx from 'clsx';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '../../utils/webShim';
 import debounce from 'lodash.debounce';
 import { AnimatePresence } from 'framer-motion';
 import { ImageDimensions, useImageRenderSize } from '../../hooks/useImageRenderSize';
@@ -179,7 +179,7 @@ export default function Editor({
   }, [targetZoom, transformWrapperRef]);
 
   const handleTransform = useCallback(
-    (_, state: TransformState) => {
+    (_: any, state: TransformState) => {
       setTransformState(state);
 
       if (isAnimating.current) {
@@ -422,6 +422,7 @@ export default function Editor({
         width: Math.round((pc.width / 100) * cropBaseWidth),
         x: Math.round((pc.x / 100) * cropBaseWidth),
         y: Math.round((pc.y / 100) * cropBaseHeight),
+        unit: 'px',
       };
 
       setAdjustments((prev: Partial<Adjustments>) => {

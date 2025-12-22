@@ -1,7 +1,5 @@
 import { useState, useEffect, useRef, forwardRef, useMemo, useCallback } from 'react';
-import { getVersion } from '@tauri-apps/api/app';
-import { invoke } from '@tauri-apps/api/core';
-import { open } from '@tauri-apps/plugin-shell';
+import { invoke, open } from '../../utils/webShim';
 import {
   AlertTriangle,
   Check,
@@ -684,14 +682,14 @@ function FilterOptions({ filterCriteria, setFilterCriteria }: FilterOptionProps)
 
 function SortOptions({ sortCriteria, setSortCriteria, sortOptions }: SortOptionsProps) {
   const handleKeyChange = (key: string) => {
-    setSortCriteria((prev: SortCriteria) => ({ ...prev, key }));
+    setSortCriteria({ ...sortCriteria, key });
   };
 
   const handleOrderToggle = () => {
-    setSortCriteria((prev: SortCriteria) => ({
-      ...prev,
-      order: prev.order === SortDirection.Ascending ? SortDirection.Descening : SortDirection.Ascending,
-    }));
+    setSortCriteria({
+      ...sortCriteria,
+      order: sortCriteria.order === SortDirection.Ascending ? SortDirection.Descening : SortDirection.Ascending,
+    });
   };
 
   return (
@@ -1153,7 +1151,7 @@ export default function MainLibrary({
   const [appVersion, setAppVersion] = useState('');
   const [supportedTypes, setSupportedTypes] = useState<SupportedTypes | null>(null);
   const libraryContainerRef = useRef<HTMLDivElement>(null);
-  const listRef = useRef<List>(null);
+  const listRef = useRef<any>(null);
   const outerRef = useRef<HTMLDivElement>(null);
   const [isUpdateAvailable, setIsUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState('');
@@ -1243,8 +1241,7 @@ export default function MainLibrary({
           top: itemBottom - clientHeight + SCROLL_OFFSET,
           behavior: 'smooth',
         });
-      }
-      else if (targetTop < scrollTop) {
+      } else if (targetTop < scrollTop) {
         element.scrollTo({
           top: targetTop - SCROLL_OFFSET,
           behavior: 'smooth',
@@ -1298,7 +1295,8 @@ export default function MainLibrary({
 
     const checkVersion = async () => {
       try {
-        const currentVersion = await getVersion();
+        // const currentVersion = await getVersion();
+        const currentVersion = '1.0.0';
         setAppVersion(currentVersion);
 
         const response = await fetch('https://api.github.com/repos/CyberTimon/RapidRAW/releases/latest');
@@ -1466,9 +1464,7 @@ export default function MainLibrary({
                     <p>
                       <span
                         className={`group transition-all duration-300 ease-in-out rounded-md py-1 ${
-                          isUpdateAvailable
-                            ? 'cursor-pointer border border-yellow-500 px-2 hover:bg-yellow-500/20'
-                            : ''
+                          isUpdateAvailable ? 'cursor-pointer border border-yellow-500 px-2 hover:bg-yellow-500/20' : ''
                         }`}
                         onClick={() => {
                           if (isUpdateAvailable) {
@@ -1707,8 +1703,7 @@ export default function MainLibrary({
           <p className="text-lg font-semibold">No Results Found</p>
           <p className="text-sm mt-2 max-w-sm">
             Could not find an image based on filename or tags.
-            {!appSettings?.enableAiTagging &&
-              ' For a more comprehensive search, enable automatic tagging in Settings.'}
+            {!appSettings?.enableAiTagging && ' For a more comprehensive search, enable automatic tagging in Settings.'}
           </p>
         </div>
       ) : (

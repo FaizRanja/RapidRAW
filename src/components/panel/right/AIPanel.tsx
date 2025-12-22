@@ -182,7 +182,7 @@ export default function AIPanel({
     if (config && config.parameters) {
       config.parameters.forEach((param: any) => {
         if (param.defaultValue !== undefined) {
-          subMask.parameters[param.key] = param.defaultValue / (param.multiplier || 1);
+          (subMask.parameters as any)[param.key] = param.defaultValue / (param.multiplier || 1);
         }
       });
     }
@@ -202,7 +202,7 @@ export default function AIPanel({
         const p = { ...subMask.parameters };
 
         if (type === Mask.Linear) {
-          if (typeof p.startX === 'number') p.startX = cx + (p.startX - ox) * ratioX;
+          if (typeof (p as any).startX === 'number') (p as any).startX = cx + ((p as any).startX - ox) * ratioX;
           if (typeof p.endX === 'number') p.endX = cx + (p.endX - ox) * ratioX;
           if (typeof p.startY === 'number') p.startY = cy + (p.startY - oy) * ratioY;
           if (typeof p.endY === 'number') p.endY = cy + (p.endY - oy) * ratioY;

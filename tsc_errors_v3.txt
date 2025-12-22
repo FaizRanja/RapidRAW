@@ -1,0 +1,65 @@
+﻿src/App.tsx(1203,34): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1340,30): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1355,31): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/App.tsx(1366,30): error TS2345: Argument of type 'unknown' is not assignable to parameter of type 'SetStateAction<any[]>'.
+src/App.tsx(1392,30): error TS2345: Argument of type 'Set<string | null>' is not assignable to parameter of type 'SetStateAction<Set<string>>'.
+  Type 'Set<string | null>' is not assignable to type 'Set<string>'.
+    Type 'string | null' is not assignable to type 'string'.
+      Type 'null' is not assignable to type 'string'.
+src/App.tsx(1797,32): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/App.tsx(1826,57): error TS2339: Property 'copyPasteSettings' does not exist on type 'AppSettings'.
+src/App.tsx(2061,15): error TS2345: Argument of type '(imageData: Uint8Array) => void' is not assignable to parameter of type '(value: unknown) => void | PromiseLike<void>'.
+  Types of parameters 'imageData' and 'value' are incompatible.
+    Type 'unknown' is not assignable to type 'Uint8Array<ArrayBufferLike>'.
+src/App.tsx(2063,36): error TS2322: Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'BlobPart'.
+  Type 'Uint8Array<ArrayBufferLike>' is not assignable to type 'ArrayBufferView<ArrayBuffer>'.
+    Types of property 'buffer' are incompatible.
+      Type 'ArrayBufferLike' is not assignable to type 'ArrayBuffer'.
+        Type 'SharedArrayBuffer' is missing the following properties from type 'ArrayBuffer': resizable, resize, detached, transfer, transferToFixedLength
+src/App.tsx(2524,30): error TS2345: Argument of type '{ isOpen: true; progress: { current: number; total: any; stage: string; }; suggestions: null; error: null; }' is not assignable to parameter of type 'SetStateAction<CullingModalState>'.
+  Property 'pathsToCull' is missing in type '{ isOpen: true; progress: { current: number; total: any; stage: string; }; suggestions: null; error: null; }' but required in type 'CullingModalState'.
+src/App.tsx(2642,28): error TS2345: Argument of type 'Set<unknown>' is not assignable to parameter of type 'SetStateAction<Set<string>>'.
+  Type 'Set<unknown>' is not assignable to type 'Set<string>'.
+    Type 'unknown' is not assignable to type 'string'.
+src/App.tsx(3448,44): error TS7006: Parameter 'p' implicitly has an 'any' type.
+src/App.tsx(3448,87): error TS7006: Parameter 'a' implicitly has an 'any' type.
+src/App.tsx(3448,90): error TS7006: Parameter 'b' implicitly has an 'any' type.
+src/App.tsx(3689,15): error TS2322: Type '{ activeAiPatchContainerId: string | null; activeAiSubMaskId: string | null; activeMaskContainerId: string | null; activeMaskId: string | null; activeRightPanel: Panel | null; ... 47 more ...; isLoadingFullRes: boolean; }' is not assignable to type 'IntrinsicAttributes & EditorProps'.
+  Property 'onZoomChange' does not exist on type 'IntrinsicAttributes & EditorProps'.
+src/App.tsx(4026,32): error TS2339: Property 'copyPasteSettings' does not exist on type 'AppSettings'.
+src/components/modals/CullingModal.tsx(209,56): error TS2339: Property 'stage' does not exist on type 'Progress'.
+src/components/modals/CullingModal.tsx(212,77): error TS18048: 'progress.current' is possibly 'undefined'.
+src/components/panel/Editor.tsx(124,36): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/Editor.tsx(182,6): error TS7006: Parameter '_' implicitly has an 'any' type.
+src/components/panel/Editor.tsx(404,52): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/Editor.tsx(404,71): error TS2709: Cannot use namespace 'PercentCrop' as a type.
+src/components/panel/Editor.tsx(409,18): error TS2709: Cannot use namespace 'PercentCrop' as a type.
+src/components/panel/Editor.tsx(420,27): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/editor/FullScreenViewer.tsx(115,13): error TS2322: Type '{ children: Element; doubleClick: any; limitToBounds: true; maxScale: number; minScale: number; onTransformed: (_: ReactZoomPanPinchRef, state: TransformState) => void; positionX: number; positionY: number; scale: number; }' is not assignable to type 'IntrinsicAttributes & Omit<ReactZoomPanPinchProps, "ref"> & RefAttributes<ReactZoomPanPinchContentRef>'.
+  Property 'positionX' does not exist on type 'IntrinsicAttributes & Omit<ReactZoomPanPinchProps, "ref"> & RefAttributes<ReactZoomPanPinchContentRef>'. Did you mean 'minPositionX'?
+src/components/panel/editor/ImageCanvas.tsx(32,9): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/editor/ImageCanvas.tsx(34,25): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/editor/ImageCanvas.tsx(34,35): error TS2709: Cannot use namespace 'PercentCrop' as a type.
+src/components/panel/editor/ImageCanvas.tsx(49,17): error TS2709: Cannot use namespace 'Crop' as a type.
+src/components/panel/editor/ImageCanvas.tsx(49,36): error TS2709: Cannot use namespace 'PercentCrop' as a type.
+src/components/panel/editor/ImageCanvas.tsx(333,23): error TS2683: 'this' implicitly has type 'any' because it does not have a type annotation.
+src/components/panel/editor/ImageCanvas.tsx(1057,23): error TS2322: Type '"high-quality"' is not assignable to type 'ImageRendering | undefined'.
+src/components/panel/MainLibrary.tsx(687,21): error TS2345: Argument of type '(prev: SortCriteria) => { key: string; label?: string; order: string; }' is not assignable to parameter of type 'SortCriteria'.
+src/components/panel/MainLibrary.tsx(691,21): error TS2345: Argument of type '(prev: SortCriteria) => { order: SortDirection; key: string; label?: string; }' is not assignable to parameter of type 'SortCriteria'.
+src/components/panel/MainLibrary.tsx(1100,13): error TS2322: Type 'string[] | null' is not assignable to type 'string[]'.
+  Type 'null' is not assignable to type 'string[]'.
+src/components/panel/MainLibrary.tsx(1156,26): error TS2709: Cannot use namespace 'List' as a type.
+src/components/panel/MainLibrary.tsx(1655,32): error TS7031: Binding element 'scrollOffset' implicitly has an 'any' type.
+src/components/panel/right/AIControls.tsx(196,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ centerX: number; centerY: number; radiusX: number; radiusY: number; rotation: number; feather: number; startX?: undefined; startY?: undefined; endX?: undefined; endY?: undefined; range?: undefined; lines?: undefined; maskDataBase64?: undefined; grow?: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+src/components/panel/right/AIPanel.tsx(185,11): error TS7053: Element implicitly has an 'any' type because expression of type 'any' can't be used to index type '{ centerX: number; centerY: number; radiusX: number; radiusY: number; rotation: number; feather: number; startX?: undefined; startY?: undefined; endX?: undefined; endY?: undefined; range?: undefined; lines?: undefined; maskDataBase64?: undefined; grow?: undefined; } | { ...; } | { ...; } | { ...; } | { ...; }'.
+src/components/panel/right/MaskControls.tsx(86,7): error TS2741: Property '[Mask.QuickEraser]' is missing in type '{ radial: { parameters: { key: string; label: string; min: number; max: number; step: number; multiplier: number; defaultValue: number; }[]; }; brush: { showBrushTools: boolean; }; linear: { parameters: never[]; }; ... 5 more ...; "ai-sky": { ...; }; }' but required in type 'Record<Mask, any>'.
+src/components/panel/right/MaskControls.tsx(181,34): error TS2345: Argument of type 'MaskAdjustments' is not assignable to parameter of type 'Adjustments'.
+  Type 'MaskAdjustments' is missing the following properties from type 'Adjustments': aiPatches, aspectRatio, centr├⌐, chromaticAberrationBlueYellow, and 23 more.
+src/components/panel/right/Masks.tsx(106,5): error TS2322: Type 'null' is not assignable to type 'Mask'.
+src/components/panel/right/Masks.tsx(185,5): error TS2322: Type 'null' is not assignable to type 'Mask'.
+src/components/panel/SettingsPanel.tsx(1056,34): error TS2741: Property 'onChange' is missing in type '{ readOnly: true; value: any; className: string; }' but required in type 'InputProps'.
+src/utils/adjustments.tsx(112,9): error TS2709: Cannot use namespace 'Crop' as a type.

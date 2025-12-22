@@ -132,6 +132,7 @@ export interface AppSettings {
   adaptiveEditorTheme?: Theme;
   comfyuiAddress?: string;
   comfyuiWorkflowConfig?: ComfyUIWorkflowConfig;
+  copyPasteSettings?: any;
   decorations?: any;
   editorPreviewResolution?: number;
   enableZoomHifi?: boolean;
@@ -151,6 +152,9 @@ export interface AppSettings {
   rawHighlightCompression?: number;
   processingBackend?: string;
   linuxGpuOptimization?: boolean;
+  taggingShortcuts?: string[];
+  aiProvider?: string;
+  transparent?: boolean;
 }
 
 export interface BrushSettings {
@@ -183,6 +187,8 @@ export interface ImageFile {
   tags: Array<string> | null;
   exif: { [key: string]: string } | null;
   is_virtual_copy: boolean;
+  width: number;
+  height: number;
 }
 
 export interface Option {
@@ -212,6 +218,7 @@ export interface Progress {
   completed?: number;
   current?: number;
   total: number;
+  stage?: string;
 }
 
 export interface SelectedImage {

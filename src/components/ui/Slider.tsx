@@ -11,6 +11,7 @@ interface SliderProps {
   step: number;
   value: number;
   trackClassName?: string;
+  disabled?: boolean;
 }
 
 const Slider = ({

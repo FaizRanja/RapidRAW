@@ -17,11 +17,8 @@ import {
   SlidersHorizontal,
   Keyboard,
 } from 'lucide-react';
-import { invoke } from '@tauri-apps/api/core';
-import { relaunch } from '@tauri-apps/plugin-process';
-import { open } from '@tauri-apps/plugin-dialog';
-import { open as openLink } from '@tauri-apps/plugin-shell';
-import { motion, AnimatePresence } from 'framer-motion';
+import { invoke, relaunch, open } from '../../utils/webShim';
+import { motion, AnimatePresence, Variants } from 'framer-motion';
 import clsx from 'clsx';
 import { SignedIn, SignedOut, SignInButton, UserButton, useUser } from '@clerk/clerk-react';
 import Button from '../ui/Button';
@@ -178,7 +175,7 @@ const ExternalLink = ({ href, children, className }: { href: string; children: a
   const handleClick = async (e: any) => {
     e.preventDefault();
     try {
-      await openLink(href);
+      await open({ url: href });
     } catch (err) {
       console.error(`Failed to open link: ${href}`, err);
     }
@@ -490,7 +487,7 @@ export default function SettingsPanel({
     });
   };
 
-  const shortcutTagVariants = {
+  const shortcutTagVariants: Variants = {
     visible: { opacity: 1, scale: 1, transition: { type: 'spring', stiffness: 500, damping: 30 } },
     exit: { opacity: 0, scale: 0.8, transition: { duration: 0.15 } },
   };
@@ -1195,10 +1192,7 @@ export default function SettingsPanel({
                                             type="number"
                                             value={comfyConfig.inpaintResolution || 1280}
                                             onChange={(e) =>
-                                              handleConfigChange(
-                                                'inpaintResolution',
-                                                parseInt(e.target.value, 10) || 0,
-                                              )
+                                              handleConfigChange('inpaintResolution', parseInt(e.target.value, 10) || 0)
                                             }
                                           />
                                         </SettingItem>
@@ -1213,9 +1207,7 @@ export default function SettingsPanel({
                                         <ModelConfigItem
                                           label="Checkpoint"
                                           data={comfyConfig.modelCheckpoints}
-                                          onChange={(newData: any) =>
-                                            handleConfigChange('modelCheckpoints', newData)
-                                          }
+                                          onChange={(newData: any) => handleConfigChange('modelCheckpoints', newData)}
                                           description={
                                             !comfyConfig.workflowPath && (
                                               <>
@@ -1245,9 +1237,7 @@ export default function SettingsPanel({
                                         <ModelConfigItem
                                           label="ControlNet"
                                           data={comfyConfig.controlnetLoaders}
-                                          onChange={(newData: any) =>
-                                            handleConfigChange('controlnetLoaders', newData)
-                                          }
+                                          onChange={(newData: any) => handleConfigChange('controlnetLoaders', newData)}
                                           description={
                                             !comfyConfig.workflowPath && (
                                               <>
@@ -1425,7 +1415,10 @@ export default function SettingsPanel({
                         <KeybindItem keys={['Space']} description="Cycle zoom (Fit, 2x Fit, 100%)" />
                         <KeybindItem keys={['←', '→']} description="Previous / Next image" />
                         <KeybindItem keys={['↑', '↓']} description="Zoom in / Zoom out (by step)" />
-                        <KeybindItem keys={['Shift', '+', 'Mouse Wheel']} description="Adjust slider value by 2 steps" />
+                        <KeybindItem
+                          keys={['Shift', '+', 'Mouse Wheel']}
+                          description="Adjust slider value by 2 steps"
+                        />
                         <KeybindItem keys={['Ctrl/Cmd', '+', '+']} description="Zoom in" />
                         <KeybindItem keys={['Ctrl/Cmd', '+', '-']} description="Zoom out" />
                         <KeybindItem keys={['Ctrl/Cmd', '+', '0']} description="Zoom to fit" />

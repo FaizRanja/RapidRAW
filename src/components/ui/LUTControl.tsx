@@ -1,4 +1,4 @@
-import { open } from '@tauri-apps/plugin-dialog';
+import { open } from '../../utils/webShim';
 import { X } from 'lucide-react';
 import Slider from './Slider';
 
@@ -48,7 +48,7 @@ export default function LUTControl({
           >
             {lutName || 'Select'}
           </button>
-          
+
           {lutName && (
             <button
               onClick={onClear}

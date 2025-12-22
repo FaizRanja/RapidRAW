@@ -43,7 +43,7 @@ export interface MaskType {
   icon: any;
   id?: string;
   name: string;
-  type: Mask;
+  type: Mask | null;
 }
 
 export interface SubMask {

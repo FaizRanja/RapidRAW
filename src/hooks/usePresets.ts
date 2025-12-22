@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '../utils/webShim';
 import debounce from 'lodash.debounce';
 import { Adjustments, COPYABLE_ADJUSTMENT_KEYS } from '../utils/adjustments';
 import { Folder, Invokes, Preset } from '../components/ui/AppProperties';

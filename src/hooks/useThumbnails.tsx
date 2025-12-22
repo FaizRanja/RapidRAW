@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
+import { invoke, listen } from '../utils/webShim';
 import { ImageFile, Invokes, Progress } from '../components/ui/AppProperties';
 
 export function useThumbnails(imageList: Array<ImageFile>, setThumbnails: any) {
@@ -39,9 +38,7 @@ export function useThumbnails(imageList: Array<ImageFile>, setThumbnails: any) {
         }
       });
 
-      return hasChanges || Object.keys(nextThumbnails).length !== imagePaths.length 
-        ? nextThumbnails 
-        : prevThumbnails;
+      return hasChanges || Object.keys(nextThumbnails).length !== imagePaths.length ? nextThumbnails : prevThumbnails;
     });
 
     let unlistenComplete: any;
@@ -60,13 +57,28 @@ export function useThumbnails(imageList: Array<ImageFile>, setThumbnails: any) {
         setLoading(false);
       });
 
+      const unlistenGenerated = await listen('thumbnail-generated', (event: any) => {
+        const { path, thumbnail } = event.payload;
+        setThumbnails((prev: Record<string, string>) => ({
+          ...prev,
+          [path]: thumbnail,
+        }));
+      });
+
       try {
         await invoke(Invokes.GenerateThumbnailsProgressive, { paths: imagePaths });
       } catch (error) {
         console.error('Failed to invoke thumbnail generation:', error);
         setLoading(false);
       }
+
+      // Cleanup extra listener
+      return () => {
+        unlistenGenerated();
+      };
     };
+
+    const cleanupPromise = setupListenersAndInvoke();
 
     setupListenersAndInvoke();
 
@@ -77,6 +89,9 @@ export function useThumbnails(imageList: Array<ImageFile>, setThumbnails: any) {
       if (unlistenProgress) {
         unlistenProgress();
       }
+      cleanupPromise.then((cleanup: any) => {
+        if (cleanup) cleanup();
+      });
     };
   }, [imageList, setThumbnails]);
 

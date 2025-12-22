@@ -177,7 +177,7 @@ export default function MasksPanel({
     const options = OTHERS_MASK_TYPES.map((maskType) => ({
       label: maskType.name,
       icon: maskType.icon,
-      onClick: () => handleAddMaskContainer(maskType.type),
+      onClick: () => handleAddMaskContainer(maskType.type as Mask),
     }));
     showContextMenu(rect.left, rect.bottom + 5, options);
   };
@@ -472,7 +472,7 @@ export default function MasksPanel({
                 onClick={(e) => {
                   if (maskType.id === 'others') {
                     handleAddOthersMask(e);
-                  } else {
+                  } else if (maskType.type) {
                     handleAddMaskContainer(maskType.type);
                   }
                 }}

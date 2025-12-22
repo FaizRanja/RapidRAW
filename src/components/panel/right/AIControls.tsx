@@ -7,15 +7,7 @@ import Slider from '../../ui/Slider';
 import Input from '../../ui/Input';
 import Button from '../../ui/Button';
 import { useContextMenu } from '../../../context/ContextMenuContext';
-import {
-  AI_SUB_MASK_COMPONENT_TYPES,
-  Mask,
-  MaskType,
-  SubMask,
-  SubMaskMode,
-  ToolType,
-  MASK_ICON_MAP,
-} from './Masks';
+import { AI_SUB_MASK_COMPONENT_TYPES, Mask, MaskType, SubMask, SubMaskMode, ToolType, MASK_ICON_MAP } from './Masks';
 import { Adjustments, AiPatch } from '../../../utils/adjustments';
 import { BrushSettings, SelectedImage } from '../../ui/AppProperties';
 import { createSubMask } from '../../../utils/maskUtils';
@@ -189,11 +181,11 @@ export default function AIControls({
   const handleAddSubMask = (containerId: string, type: Mask) => {
     const subMask = createSubMask(type, selectedImage);
 
-    const config = SUB_MASK_CONFIG[type];
+    const config = (SUB_MASK_CONFIG as any)[type];
     if (config && config.parameters) {
       config.parameters.forEach((param: any) => {
         if (param.defaultValue !== undefined) {
-          subMask.parameters[param.key] = param.defaultValue / (param.multiplier || 1);
+          (subMask.parameters as any)[param.key] = param.defaultValue / (param.multiplier || 1);
         }
       });
     }
@@ -279,13 +271,13 @@ export default function AIControls({
     return null;
   }
 
-  const subMaskConfig = activeSubMask ? SUB_MASK_CONFIG[activeSubMask.type] || {} : {};
+  const subMaskConfig = activeSubMask ? (SUB_MASK_CONFIG as any)[activeSubMask.type] || {} : {};
 
   const handleSubMaskParameterChange = (key: string, value: any) => {
     if (!activeSubMask) {
       return;
     }
-    updateSubMask(activeSubMask.id, { parameters: { ...activeSubMask.parameters, [key]: value } });
+    updateSubMask(activeSubMask.id, { parameters: { ...(activeSubMask.parameters as any), [key]: value } });
   };
 
   const handlePatchPropertyChange = (key: string, value: any) => updatePatch(editingPatch.id, { [key]: value });

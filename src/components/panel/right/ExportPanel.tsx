@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { save, open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
+import { save, open, invoke } from '../../../utils/webShim';
 import { Save, CheckCircle, XCircle, Loader, Ban } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import Switch from '../../ui/Switch';

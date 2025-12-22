@@ -329,7 +329,7 @@ const MaskOverlay = memo(
         hitStrokeWidth: 20,
       };
 
-      const perpendicularDragBoundFunc = function (pos: any) {
+      const perpendicularDragBoundFunc = function (this: any, pos: any) {
         const group = this.getParent();
         const transform = group.getAbsoluteTransform().copy();
         transform.invert();
@@ -646,86 +646,91 @@ const ImageCanvas = memo(
       }
     }, [isCropping, uncroppedAdjustedPreviewUrl]);
 
-    const handleWbClick = useCallback((e: any) => {
-      if (!isWbPickerActive || !finalPreviewUrl || !onWbPicked) return;
-      
-      const stage = e.target.getStage();
-      const pointerPos = stage.getPointerPosition();
-      if (!pointerPos) return;
+    const handleWbClick = useCallback(
+      (e: any) => {
+        if (!isWbPickerActive || !finalPreviewUrl || !onWbPicked) return;
 
-      const x = (pointerPos.x - imageRenderSize.offsetX) / imageRenderSize.scale;
-      const y = (pointerPos.y - imageRenderSize.offsetY) / imageRenderSize.scale;
+        const stage = e.target.getStage();
+        const pointerPos = stage.getPointerPosition();
+        if (!pointerPos) return;
 
-      const imgWidth = imageRenderSize.width / imageRenderSize.scale;
-      const imgHeight = imageRenderSize.height / imageRenderSize.scale;
-      
-      if (x < 0 || x > imgWidth || y < 0 || y > imgHeight) return;
+        const x = (pointerPos.x - imageRenderSize.offsetX) / imageRenderSize.scale;
+        const y = (pointerPos.y - imageRenderSize.offsetY) / imageRenderSize.scale;
 
-      const img = new Image();
-      img.crossOrigin = "Anonymous";
-      img.src = finalPreviewUrl;
-      
-      img.onload = () => {
-        const canvas = document.createElement('canvas');
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        const imgWidth = imageRenderSize.width / imageRenderSize.scale;
+        const imgHeight = imageRenderSize.height / imageRenderSize.scale;
 
-        ctx.drawImage(img, 0, 0);
+        if (x < 0 || x > imgWidth || y < 0 || y > imgHeight) return;
 
-        const scaleX = img.width / imgWidth;
-        const scaleY = img.height / imgHeight;
-        const srcX = Math.floor(x * scaleX);
-        const srcY = Math.floor(y * scaleY);
+        const img = new Image();
+        img.crossOrigin = 'Anonymous';
+        img.src = finalPreviewUrl;
 
-        const radius = 5; 
-        const startX = Math.max(0, srcX - radius);
-        const startY = Math.max(0, srcY - radius);
-        const endX = Math.min(img.width, srcX + radius + 1);
-        const endY = Math.min(img.height, srcY + radius + 1);
-        const w = endX - startX;
-        const h = endY - startY;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          if (!ctx) return;
 
-        if (w <= 0 || h <= 0) return;
+          ctx.drawImage(img, 0, 0);
 
-        const imageData = ctx.getImageData(startX, startY, w, h);
-        const data = imageData.data;
-        
-        let rTotal = 0, gTotal = 0, bTotal = 0;
-        let count = 0;
+          const scaleX = img.width / imgWidth;
+          const scaleY = img.height / imgHeight;
+          const srcX = Math.floor(x * scaleX);
+          const srcY = Math.floor(y * scaleY);
 
-        for (let i = 0; i < data.length; i += 4) {
-          rTotal += data[i];
-          gTotal += data[i + 1];
-          bTotal += data[i + 2];
-          count++;
-        }
+          const radius = 5;
+          const startX = Math.max(0, srcX - radius);
+          const startY = Math.max(0, srcY - radius);
+          const endX = Math.min(img.width, srcX + radius + 1);
+          const endY = Math.min(img.height, srcY + radius + 1);
+          const w = endX - startX;
+          const h = endY - startY;
 
-        const avgR = rTotal / count;
-        const avgG = gTotal / count;
-        const avgB = bTotal / count;
+          if (w <= 0 || h <= 0) return;
 
-        const linR = Math.pow(avgR / 255.0, 2.2);
-        const linG = Math.pow(avgG / 255.0, 2.2);
-        const linB = Math.pow(avgB / 255.0, 2.2);
+          const imageData = ctx.getImageData(startX, startY, w, h);
+          const data = imageData.data;
 
-        const sumRB = linR + linB;
-        const deltaTemp = sumRB > 0.0001 ? ((linB - linR) / sumRB) * 125.0 : 0;
+          let rTotal = 0,
+            gTotal = 0,
+            bTotal = 0;
+          let count = 0;
 
-        const linM = sumRB / 2.0;
-        const sumGM = linG + linM;
-        const deltaTint = sumGM > 0.0001 ? ((linG - linM) / sumGM) * 400.0 : 0;
+          for (let i = 0; i < data.length; i += 4) {
+            rTotal += data[i];
+            gTotal += data[i + 1];
+            bTotal += data[i + 2];
+            count++;
+          }
 
-        setAdjustments((prev: Adjustments) => ({
-          ...prev,
-          temperature: Math.max(-100, Math.min(100, (prev.temperature || 0) + deltaTemp)),
-          tint: Math.max(-100, Math.min(100, (prev.tint || 0) + deltaTint)),
-        }));
+          const avgR = rTotal / count;
+          const avgG = gTotal / count;
+          const avgB = bTotal / count;
 
-        onWbPicked();
-      };
-    }, [isWbPickerActive, finalPreviewUrl, imageRenderSize, onWbPicked, setAdjustments]);
+          const linR = Math.pow(avgR / 255.0, 2.2);
+          const linG = Math.pow(avgG / 255.0, 2.2);
+          const linB = Math.pow(avgB / 255.0, 2.2);
+
+          const sumRB = linR + linB;
+          const deltaTemp = sumRB > 0.0001 ? ((linB - linR) / sumRB) * 125.0 : 0;
+
+          const linM = sumRB / 2.0;
+          const sumGM = linG + linM;
+          const deltaTint = sumGM > 0.0001 ? ((linG - linM) / sumGM) * 400.0 : 0;
+
+          setAdjustments((prev: Adjustments) => ({
+            ...prev,
+            temperature: Math.max(-100, Math.min(100, (prev.temperature || 0) + deltaTemp)),
+            tint: Math.max(-100, Math.min(100, (prev.tint || 0) + deltaTint)),
+          }));
+
+          onWbPicked();
+        };
+      },
+      [isWbPickerActive, finalPreviewUrl, imageRenderSize, onWbPicked, setAdjustments],
+    );
 
     const handleMouseDown = useCallback(
       (e: any) => {
@@ -764,7 +769,17 @@ const ImageCanvas = memo(
           }
         }
       },
-      [isWbPickerActive, handleWbClick, isBrushActive, isAiSubjectActive, brushSettings, onSelectMask, onSelectAiSubMask, isMasking, isAiEditing],
+      [
+        isWbPickerActive,
+        handleWbClick,
+        isBrushActive,
+        isAiSubjectActive,
+        brushSettings,
+        onSelectMask,
+        onSelectAiSubMask,
+        isMasking,
+        isAiEditing,
+      ],
     );
 
     const handleMouseMove = useCallback(
@@ -1031,9 +1046,7 @@ const ImageCanvas = memo(
           }}
         >
           <div
-            className={clsx(
-              isAdjusting && !showOriginal ? 'opacity-90' : 'opacity-100',
-            )}
+            className={clsx(isAdjusting && !showOriginal ? 'opacity-90' : 'opacity-100')}
             style={{
               height: '100%',
               opacity: isContentReady ? 1 : 0,

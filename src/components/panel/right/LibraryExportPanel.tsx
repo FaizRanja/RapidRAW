@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
-import { invoke } from '@tauri-apps/api/core';
+import { open, invoke } from '../../../utils/webShim';
 import { Save, CheckCircle, XCircle, Loader, X, Ban } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import Switch from '../../ui/Switch';
@@ -343,7 +342,11 @@ export default function LibraryExportPanel({
     setExportState({ status: Status.Exporting, progress: { current: 0, total: numImages }, errorMessage: '' });
 
     let finalFilenameTemplate = filenameTemplate;
-    if (numImages > 1 && !filenameTemplate.includes('{sequence}') && !filenameTemplate.includes('{original_filename}')) {
+    if (
+      numImages > 1 &&
+      !filenameTemplate.includes('{sequence}') &&
+      !filenameTemplate.includes('{original_filename}')
+    ) {
       finalFilenameTemplate = `${filenameTemplate}_{sequence}`;
       setFilenameTemplate(finalFilenameTemplate);
     }
