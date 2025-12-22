@@ -788,9 +788,19 @@ const ImageCanvas = memo(
           return;
         }
 
-        if (isToolActive) {
+        let pos;
+        if (e && typeof e.target?.getStage === 'function') {
           const stage = e.target.getStage();
-          const pos = stage.getPointerPosition();
+          pos = stage.getPointerPosition();
+        } else if (e && e.clientX != null && e.clientY != null) {
+          const stageEl = document.querySelector('.konvajs-content');
+          if (stageEl) {
+            const rect = stageEl.getBoundingClientRect();
+            pos = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+          }
+        }
+
+        if (isToolActive) {
           if (pos) {
             setCursorPreview({ x: pos.x, y: pos.y, visible: true });
           } else {
@@ -802,8 +812,6 @@ const ImageCanvas = memo(
           return;
         }
 
-        const stage = e.target.getStage();
-        const pos = stage.getPointerPosition();
         if (!pos) {
           return;
         }
@@ -903,10 +911,25 @@ const ImageCanvas = memo(
 
     const handleMouseLeave = useCallback(() => {
       setCursorPreview((p: CursorPreview) => ({ ...p, visible: false }));
-      if (isDrawing.current) {
+    }, []);
+
+    useEffect(() => {
+      if (!isToolActive) return;
+      function onMove(e: MouseEvent) {
+        handleMouseMove(e);
+      }
+      function onUp(e: MouseEvent) {
         handleMouseUp();
       }
-    }, [handleMouseUp]);
+      if (isDrawing.current) {
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', onUp);
+        return () => {
+          window.removeEventListener('mousemove', onMove);
+          window.removeEventListener('mouseup', onUp);
+        };
+      }
+    }, [isToolActive, handleMouseMove, handleMouseUp]);
 
     const handleStraightenMouseDown = (e: any) => {
       if (e.evt.button !== 0) {

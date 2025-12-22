@@ -698,6 +698,7 @@ export default function SettingsPanel({
                     preserved and applied even when hidden.
                   </p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    {/* Hide noise reduction to stop people from thinking it exists
                     <Switch
                       label="Noise Reduction"
                       checked={appSettings?.adjustmentVisibility?.noiseReduction ?? true}
@@ -710,7 +711,8 @@ export default function SettingsPanel({
                           },
                         })
                       }
-                    />
+                    /> 
+                    */}
                     <Switch
                       label="Chromatic Aberration"
                       checked={appSettings?.adjustmentVisibility?.chromaticAberration ?? false}
