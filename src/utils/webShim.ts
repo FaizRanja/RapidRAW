@@ -428,6 +428,8 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
                  for (let i = 0; i < binaryString.length; i++) {
                     bytes[i] = binaryString.charCodeAt(i);
                  }
+                 // Emit update for listeners
+                 emit('preview-update-final', bytes);
                  return bytes as any;
              }
          } catch(e) {
