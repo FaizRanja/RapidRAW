@@ -1059,6 +1059,235 @@ const ImageCanvas = memo(
       return transforms.join(' ');
     }, [adjustments.rotation, adjustments.flipHorizontal, adjustments.flipVertical]);
 
+    const imageFilters = useMemo(() => {
+      const {
+        brightness = 0,
+        contrast = 0,
+        exposure = 0,
+        saturation = 0,
+        enableNegativeConversion = false,
+        sharpness = 0,
+      } = adjustments;
+
+      // Brightness/Exposure: -5 to 5 -> 0 to 2 (1 is default)
+      const brightnessVal = 1 + (brightness + exposure) / 5;
+
+      // Contrast: -100 to 100 -> 0 to 2 (1 is default)
+      const contrastVal = 1 + contrast / 100;
+
+      // Saturation: -100 to 100 -> 0 to 2 (1 is default)
+      const saturationVal = 1 + saturation / 100;
+
+      // Blur (negative sharpness): -100 to 0 -> 0px to 5px
+      const blurVal = sharpness < 0 ? Math.abs(sharpness) / 20 : 0;
+
+      const filters = [
+        `brightness(${Math.max(0, brightnessVal)})`,
+        `contrast(${Math.max(0, contrastVal)})`,
+        `saturate(${Math.max(0, saturationVal)})`,
+        `blur(${blurVal}px)`,
+      ];
+
+      if (enableNegativeConversion) {
+        filters.push('invert(1)');
+      }
+
+      return filters.join(' ');
+    }, [
+      adjustments.brightness,
+      adjustments.contrast,
+      adjustments.exposure,
+      adjustments.saturation,
+      adjustments.enableNegativeConversion,
+      adjustments.sharpness,
+    ]);
+
+    // Calculate Temperature/Tint overlay color
+    const tempTintOverlay = useMemo(() => {
+      const { temperature = 0, tint = 0 } = adjustments;
+      if (temperature === 0 && tint === 0) return null;
+
+      // Temperature: Orange (positive) vs Blue (negative)
+      // Tint: Magenta (positive) vs Green (negative)
+
+      // We'll simplisticly mix two colors.
+      // This is a rough approximation.
+      let r = 0,
+        g = 0,
+        b = 0;
+      let opacity = 0;
+
+      // Normalize values -100 to 100 -> -1 to 1
+      const t = temperature / 100; // +Orange / -Blue
+      const tn = tint / 100; // +Magenta / -Green
+
+      // Base contribution
+      // Warm (Orange): R=255, G=160, B=0
+      // Cool (Blue):   R=0,   G=100, B=255
+
+      // Tint
+      // Magenta: R=255, G=0, B=255
+      // Green:   R=0,   G=255, B=0
+
+      if (t > 0) {
+        r += 255 * t;
+        g += 160 * t;
+        b += 0 * t;
+        opacity += t;
+      } else {
+        r += 0 * -t;
+        g += 100 * -t;
+        b += 255 * -t;
+        opacity += -t;
+      }
+
+      if (tn > 0) {
+        r += 255 * tn;
+        g += 0 * tn;
+        b += 255 * tn;
+        opacity += tn;
+      } else {
+        r += 0 * -tn;
+        g += 255 * -tn;
+        b += 0 * -tn;
+        opacity += -tn;
+      }
+
+      // Average out if both are active (simple heuristic)
+      const count = (t !== 0 ? 1 : 0) + (tn !== 0 ? 1 : 0);
+      if (count > 0) {
+        // Re-normalization isn't perfect here but works for visual "coating"
+        // Actually, let's just use the max opacity and clamp the color sums
+        opacity = Math.min(0.5, opacity / count); // Cap opacity so it doesn't obscure image
+        r = Math.min(255, r);
+        g = Math.min(255, g);
+        b = Math.min(255, b);
+      }
+
+      return {
+        backgroundColor: `rgba(${Math.round(r)}, ${Math.round(g)}, ${Math.round(b)}, 1)`,
+        opacity: Math.abs(opacity),
+        mixBlendMode: 'overlay', // Soft light or overlay works well for tinting
+        pointerEvents: 'none',
+        position: 'absolute',
+        inset: 0,
+        zIndex: 10,
+      } as const;
+    }, [adjustments.temperature, adjustments.tint]);
+
+    // Vignette Overlay
+    const vignetteStyle = useMemo(() => {
+      const { vignetteAmount = 0, vignetteMidpoint = 50, vignetteFeather = 50, vignetteRoundness = 0 } = adjustments;
+      if (vignetteAmount === 0) return null;
+
+      // Invert amount logic from LR style: Negative is dark corners (common), Positive is white corners.
+      // Assuming standard "make it dark":
+      // Actually, the app likely uses negative for dark, positive for white like Lightroom.
+      // Let's assume user drags Left (-100) -> Dark vignette.
+
+      const isDark = vignetteAmount < 0;
+      const color = isDark ? '0,0,0' : '255,255,255';
+      const opacity = Math.abs(vignetteAmount) / 100;
+
+      // Midpoint: 0 (center) to 100 (edges). Default 50.
+      // In CSS radial-gradient, the start position of the fade.
+      const midpointPct = vignetteMidpoint + '%';
+
+      // Feather: 0 (hard edge) to 100 (soft).
+      // Controls the distance between start and end of gradient.
+      // Simplified mapping.
+      const featherVal = (100 - vignetteFeather) / 2; // Arbitrary scaler
+      const endPct = Math.min(100, vignetteMidpoint + 50 + (100 - vignetteFeather)) + '%';
+
+      // Roundness is hard to map perfectly to radial-gradient shape without detailed percentage tweaking.
+      // We'll stick to a basic radial gradient.
+
+      return {
+        background: `radial-gradient(circle closest-corner at 50% 50%, rgba(${color},0) ${midpointPct}, rgba(${color},${opacity}) ${endPct})`,
+        pointerEvents: 'none',
+        position: 'absolute',
+        inset: 0,
+        zIndex: 11,
+        mixBlendMode: isDark ? 'multiply' : 'screen',
+      } as const;
+    }, [
+      adjustments.vignetteAmount,
+      adjustments.vignetteMidpoint,
+      adjustments.vignetteFeather,
+      adjustments.vignetteRoundness,
+    ]);
+
+    // Grain Overlay - using a noise pattern data URI for simplicity
+    const grainStyle = useMemo(() => {
+      const { grainAmount = 0, grainSize = 25 } = adjustments;
+      if (grainAmount === 0) return null;
+
+      // This is a minimal SVG noise
+      const noiseSvg = `<svg xmlns='http://www.w3.org/2000/svg' width='100' height='100'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='${
+        0.5 + (100 - grainSize) / 200
+      }' numOctaves='3' stitchTiles='stitch'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='${
+        grainAmount / 100
+      }'/></svg>`;
+      const url = `url("data:image/svg+xml;utf8,${noiseSvg}")`;
+
+      return {
+        backgroundImage: url,
+        pointerEvents: 'none',
+        position: 'absolute',
+        inset: 0,
+        zIndex: 12,
+        opacity: 0.5 + grainAmount / 200, // Base opacity
+        mixBlendMode: 'overlay',
+      } as const;
+    }, [adjustments.grainAmount, adjustments.grainSize]);
+
+    // Calculate Transform (Rotate/Flip)
+    const imgTransform = useMemo(() => {
+      const transforms = [];
+      if (adjustments.rotation) {
+        transforms.push(`rotate(${adjustments.rotation}deg)`);
+      }
+      // Process orientationSteps (90 degree increments)
+      if (adjustments.orientationSteps) {
+        transforms.push(`rotate(${adjustments.orientationSteps * 90}deg)`);
+      }
+
+      if (adjustments.flipHorizontal) {
+        transforms.push('scaleX(-1)');
+      }
+      if (adjustments.flipVertical) {
+        transforms.push('scaleY(-1)');
+      }
+
+      // Keep the GPU acceleration hack
+      transforms.push('translateZ(0)');
+
+      return transforms.join(' ');
+    }, [adjustments.rotation, adjustments.orientationSteps, adjustments.flipHorizontal, adjustments.flipVertical]);
+
+    // Calculate Crop (Clip-Path)
+    // We assume adjustments.crop is relative to the "oriented" dimensions
+    // (swapped if 90/270 deg) because CropPanel logic works that way.
+    const imgClipPath = useMemo(() => {
+      if (!adjustments.crop || !selectedImage?.width || !selectedImage?.height) return 'none';
+
+      // Base dimensions depend on orientation
+      const steps = adjustments.orientationSteps || 0;
+      const isSwapped = steps === 1 || steps === 3;
+      const baseW = isSwapped ? selectedImage.height : selectedImage.width;
+      const baseH = isSwapped ? selectedImage.width : selectedImage.height;
+
+      const { x, y, width, height } = adjustments.crop;
+
+      // Convert to percentages
+      const top = (y / baseH) * 100;
+      const left = (x / baseW) * 100;
+      const bottom = 100 - ((y + height) / baseH) * 100;
+      const right = 100 - ((x + width) / baseW) * 100;
+
+      return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
+    }, [adjustments.crop, adjustments.orientationSteps, selectedImage?.width, selectedImage?.height]);
+
     return (
       <div className="relative" style={{ width: '100%', height: '100%' }}>
         <div
@@ -1089,15 +1318,25 @@ const ImageCanvas = memo(
                     style={{
                       opacity: layer.opacity,
                       transition: 'opacity 150ms ease-in-out',
-                      willChange: 'opacity',
+                      willChange: 'opacity, transform',
                       imageRendering: 'high-quality',
                       WebkitImageRendering: 'high-quality',
-                      transform: 'translateZ(0)',
+                      transform: imgTransform,
+                      transformOrigin: 'center center',
                       backfaceVisibility: 'hidden',
+                      filter: imageFilters,
+                      clipPath: imgClipPath,
+                      WebkitClipPath: imgClipPath,
                     }}
                   />
                 ) : null,
               )}
+
+              {/* Adjustment Overlays */}
+              {tempTintOverlay && <div style={tempTintOverlay} />}
+              {vignetteStyle && <div style={vignetteStyle} />}
+              {grainStyle && <div style={grainStyle} />}
+
               {(isMasking || isAiEditing) && maskOverlayUrl && (
                 <img
                   alt="Mask Overlay"
