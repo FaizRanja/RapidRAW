@@ -3,6 +3,7 @@ export const generatePaletteFromImage = (imageUrl: string) => {
     const img = new Image();
     img.crossOrigin = 'Anonymous';
     img.src = imageUrl;
+    
 
     img.onload = () => {
       const canvas: HTMLCanvasElement = document.createElement('canvas');

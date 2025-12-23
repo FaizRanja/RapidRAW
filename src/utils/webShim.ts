@@ -33,8 +33,112 @@ const getHandleFromPath = async (path: string): Promise<FileSystemFileHandle | n
   }
 };
 
+// Stateful storage for presets (in-memory only for this session)
+let mockPresets: any[] = [];
+
 export const invoke = async <T = any>(command: string, args?: any): Promise<T> => {
   console.log(`[WebShim] invoke: ${command}`, args);
+  
+  // ... existing mock handlers ...
+
+  if (command === 'load_presets') {
+      return [...mockPresets] as any;
+  }
+  
+  if (command === 'save_presets') {
+      console.log('[WebShim] save_presets', args);
+      // args.presets contains the full new list of presets
+      if (args && args.presets) {
+          mockPresets = args.presets;
+      }
+      return true as any;
+  }
+  
+  if (command === 'handle_import_presets_from_file') {
+      console.log('[WebShim] handle_import_presets_from_file', args);
+      const filePath = args.filePath;
+      
+      let importedPresets: any[] = [];
+      
+      // Try to read from our simulated file system
+      if (fileContentMap.has(filePath)) {
+          try {
+              const content = fileContentMap.get(filePath)!;
+              const json = JSON.parse(content);
+              // Rust struct PresetFile { presets: Vec<PresetItem> }
+              if (json.presets && Array.isArray(json.presets)) {
+                  importedPresets = json.presets;
+              } else {
+                  console.warn('[WebShim] Invalid preset file format', json);
+              }
+          } catch (e) {
+              console.error('[WebShim] Failed to parse imported file', e);
+          }
+      } else {
+          // Fallback simulation if file content is missing (e.g. from prompt)
+           console.log('[WebShim] content not found in map, using simulation fallback');
+           importedPresets = [{
+              preset: {
+                  id: crypto.randomUUID(),
+                  name: 'Imported Preset ' + (mockPresets.length + 1),
+                  adjustments: { saturation: 1.5, contrast: 1.2, brightness: 1.1 }
+              }
+          }];
+      }
+      
+      // Merge logic from Rust (file_management.rs)
+      const currentNames = new Set(mockPresets.map(p => p.preset ? p.preset.name : p.folder.name));
+      
+      for (const item of importedPresets) {
+          // Generate new IDs
+          if (item.preset) {
+              item.preset.id = crypto.randomUUID();
+              let newName = item.preset.name;
+              let counter = 1;
+              while (currentNames.has(newName)) {
+                  newName = `${item.preset.name} (${counter})`;
+                  counter++;
+              }
+              item.preset.name = newName;
+              currentNames.add(newName);
+              mockPresets.push(item);
+          } else if (item.folder) {
+               item.folder.id = crypto.randomUUID();
+               // Should also re-ID children
+               if (item.folder.children) {
+                   item.folder.children.forEach((child: any) => {
+                       if (child.preset) child.preset.id = crypto.randomUUID();
+                   });
+               }
+               
+               let newName = item.folder.name;
+               let counter = 1;
+               while (currentNames.has(newName)) {
+                   newName = `${item.folder.name} (${counter})`;
+                   counter++;
+               }
+               item.folder.name = newName;
+               currentNames.add(newName);
+               mockPresets.push(item);
+          }
+      }
+      
+      return [...mockPresets] as any;
+  }
+
+  if (command === 'handle_import_legacy_presets_from_file') {
+       console.log('[WebShim] Importing legacy preset fake');
+       const newPreset = {
+          preset: {
+              id: crypto.randomUUID(),
+              name: 'Legacy Import ' + (mockPresets.length + 1),
+              adjustments: { saturation: -1 }
+          }
+      };
+      mockPresets = [...mockPresets, newPreset];
+      return [...mockPresets] as any;
+  }
+
   
   if (command === 'get_folder_tree') {
     const path = args.path || '/';
@@ -197,14 +301,19 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
         return null as any;
       }
       
-      // Navigate to directory containing the image
-      let currentHandle = rootDirectoryHandle;
-      for (const part of pathParts) {
-        currentHandle = await currentHandle.getDirectoryHandle(part);
+      // Use helper to resolve path
+      let fileHandle;
+      try {
+        fileHandle = await getHandleFromPath(imagePath);
+      } catch (e) {
+        console.warn('Could not resolve file handle for', imagePath, e);
+        return null as any;
       }
-      
-      // Get the file handle
-      const fileHandle = await currentHandle.getFileHandle(fileName);
+
+      if (!fileHandle) {
+        console.warn('File handle not found for', imagePath);
+        return null as any;
+      }
       const file = await fileHandle.getFile();
       const arrayBuffer = await file.arrayBuffer();
       
@@ -356,31 +465,11 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
 
   if (command === 'apply_adjustments') {
     console.log('[WebShim] apply_adjustments called', args);
-    const imagePath = args?.path;
-    
-    // Simulate processing delay
-    setTimeout(async () => {
-         // Emit the original image so the user sees something valid instead of a white placeholder
-         try {
-             if (imagePath) {
-                 const result: any = await invoke('load_image', { path: imagePath });
-                 if (result && result.data) {
-                     // Convert base64 data back to Uint8Array for the preview-update-final event
-                     // The event expects raw bytes, not base64 string
-                     const base64Data = result.data.split(',')[1];
-                     const binaryString = window.atob(base64Data);
-                     const bytes = new Uint8Array(binaryString.length);
-                     for (let i = 0; i < binaryString.length; i++) {
-                        bytes[i] = binaryString.charCodeAt(i);
-                     }
-                     emit('preview-update-final', bytes);
-                     return;
-                 }
-             }
-         } catch (e) {
-             console.error('Error loading original image for preview simulation', e);
-         }
-    }, 100);
+    // For web version, we rely on CSS filters in ImageCanvas.tsx.
+    // The backend would bake these in, but since we are mocking, we should NOT emit a "final" image
+    // that is just the original raw bytes, because that might override the CSS preview.
+    // By doing nothing (or just acknowledging), we let the live preview persist.
+    console.log('[WebShim] apply_adjustments acknowledged (Client-side rendering active)');
     return null as any;
   }
 
@@ -437,6 +526,78 @@ export const invoke = async <T = any>(command: string, args?: any): Promise<T> =
       return new Uint8Array() as any;
   }
 
+  if (command === 'generate_mask_overlay') {
+       console.log('[WebShim] generate_mask_overlay called', args);
+       // Return a transparent 1x1 pixel image to prevent errors
+       // In a real implementation this would generate the red overlay
+       return 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKwkVQAAAABJRU5ErkJggg==' as any;
+  }
+  
+  if (command === 'save_settings') {
+      console.log('[WebShim] save_settings', args);
+      return true as any;
+  }
+
+  if (command === 'check_comfyui_status') {
+      // Simulate ComfyUI not running or not installed for web version
+      // Or return false to indicate it's not active
+      return false as any;
+  }
+  
+
+
+  if (command === 'fetch_community_presets') {
+      return [
+        {
+          name: 'Vibrant Sunset',
+          creator: 'PhotoMaster',
+          adjustments: { saturation: 1.2, contrast: 1.1, temperature: 10 }
+        },
+        {
+          name: 'Moody BW',
+          creator: 'ArtisticSoul',
+          adjustments: { saturation: 0, contrast: 1.3, grainAmount: 20 }
+        },
+        {
+          name: 'Cinematic Teal',
+          creator: 'FilmLook',
+          adjustments: { temperature: -10, tint: 10, contrast: 1.1 }
+        }
+      ] as any;
+  }
+
+  if (command === 'generate_all_community_previews') {
+      // Return a map of presetName -> previewData (simulated as array of bytes)
+      // We'll just mock this structure. CommunityPage expects Record<string, number[]>
+      // But creating valid jpeg bytes manually is hard. 
+      // Actually, CommunityPage uses `new Blob([new Uint8Array(imageData)], { type: 'image/jpeg' })`
+      // So returning valid bytes is important for the Blob to be a valid image.
+      // However, we can probably get away with returning an empty array if we handle the preview generation gracefully, 
+      // OR we can try to return the same 1x1 pixel transparent gif bytes we used before, converted to number array.
+      
+      // 1x1 Transparent GIF bytes
+      const transparentGif = [71, 73, 70, 56, 57, 97, 1, 0, 1, 0, 128, 0, 0, 0, 0, 0, 0, 0, 0, 33, 249, 4, 1, 0, 0, 0, 0, 44, 0, 0, 0, 0, 1, 0, 1, 0, 0, 2, 2, 68, 1, 0, 59];
+      
+      return {
+          'Vibrant Sunset': transparentGif,
+          'Moody BW': transparentGif,
+          'Cinematic Teal': transparentGif
+      } as any;
+  }
+
+  if (command === 'save_community_preset') {
+      const { name, adjustments } = args;
+      const newPreset = {
+          preset: {
+              id: crypto.randomUUID(),
+              name: name,
+              adjustments: adjustments
+          }
+      };
+      mockPresets = [...mockPresets, newPreset];
+      return true as any; 
+  }
+
   console.warn(`Unhandled command: ${command}`);
   return null as any;
 };
@@ -463,43 +624,62 @@ export const listen = async (event: string, handler: (payload: any) => void) => 
     }
   };
 };
+
+const fileContentMap = new Map<string, string>();
+
 export const open = async (options?: any) => {
   console.log(`[WebShim] open dialog`, options);
   
+  // Check if we are selecting a directory or files
   if (options?.directory) {
-    if ('showDirectoryPicker' in window) {
+      // Real File System Access API
       try {
-        // @ts-ignore
-        const handle = await window.showDirectoryPicker({
-          id: 'image-browser',
-          startIn: 'pictures',
-          mode: 'read'
+        // @ts-ignore - showDirectoryPicker is experimental but supported in Chrome/Edge
+        const dirHandle = await window.showDirectoryPicker({
+          mode: 'read',
+          id: 'rapidraw_working_dir',
         });
-        
-        rootDirectoryHandle = handle;
+
+        rootDirectoryHandle = dirHandle;
         dirParams.clear();
         fileParams.clear();
-        
-        console.log(`Opened directory: ${handle.name}`);
-        
+
         return '/' as any;
-        
       } catch (e) {
-        if (e.name === 'AbortError') {
-          console.log('User cancelled directory picker');
-        } else {
-          console.error('Error opening directory:', e);
-        }
+        console.warn('Directory selection cancelled or failed:', e);
         return null;
       }
-    } else {
-      console.error('File System Access API not supported');
-      alert('Please use Chrome/Edge 86+ or Opera 72+ for file system access');
-      return '/test-directory' as any;
-    }
+
+  } else {
+      // File Picker (for presets, etc)
+      if ('showOpenFilePicker' in window) {
+          try {
+              // @ts-ignore
+              const [handle] = await window.showOpenFilePicker({
+                  types: options?.filters ? options.filters.map((f: any) => ({
+                      description: f.name,
+                      accept: { 'application/json': f.extensions.map((e: string) => '.' + e) }
+                  })) : [],
+                  multiple: false
+              });
+              
+              const file = await handle.getFile();
+              const text = await file.text();
+              const fakePath = `/imported/${file.name}`;
+              fileContentMap.set(fakePath, text);
+              console.log(`[WebShim] Cached content for ${fakePath}`);
+              
+              return fakePath as any;
+          } catch (e) {
+               console.warn('File selection cancelled:', e);
+               return null;
+          }
+      }
+      
+      const fakePath = prompt("Enter a simulated file path for import (or cancel):", "/path/to/preset.rrpreset");
+      if (!fakePath) return null;
+      return fakePath as any;
   }
-  
-  return null;
 };
 export const save = async (options?: any) => {
   console.log(`[WebShim] save dialog`, options);

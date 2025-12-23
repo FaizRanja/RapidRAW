@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo, useMemo } from 'react';
 import ReactCrop from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
 import { Stage, Layer, Ellipse, Line, Transformer, Group, Circle, Rect } from 'react-konva';
@@ -1059,49 +1059,6 @@ const ImageCanvas = memo(
       return transforms.join(' ');
     }, [adjustments.rotation, adjustments.flipHorizontal, adjustments.flipVertical]);
 
-    const imageFilters = useMemo(() => {
-      const {
-        brightness = 0,
-        contrast = 0,
-        exposure = 0,
-        saturation = 0,
-        enableNegativeConversion = false,
-        sharpness = 0,
-      } = adjustments;
-
-      // Brightness/Exposure: -5 to 5 -> 0 to 2 (1 is default)
-      const brightnessVal = 1 + (brightness + exposure) / 5;
-
-      // Contrast: -100 to 100 -> 0 to 2 (1 is default)
-      const contrastVal = 1 + contrast / 100;
-
-      // Saturation: -100 to 100 -> 0 to 2 (1 is default)
-      const saturationVal = 1 + saturation / 100;
-
-      // Blur (negative sharpness): -100 to 0 -> 0px to 5px
-      const blurVal = sharpness < 0 ? Math.abs(sharpness) / 20 : 0;
-
-      const filters = [
-        `brightness(${Math.max(0, brightnessVal)})`,
-        `contrast(${Math.max(0, contrastVal)})`,
-        `saturate(${Math.max(0, saturationVal)})`,
-        `blur(${blurVal}px)`,
-      ];
-
-      if (enableNegativeConversion) {
-        filters.push('invert(1)');
-      }
-
-      return filters.join(' ');
-    }, [
-      adjustments.brightness,
-      adjustments.contrast,
-      adjustments.exposure,
-      adjustments.saturation,
-      adjustments.enableNegativeConversion,
-      adjustments.sharpness,
-    ]);
-
     // Calculate Temperature/Tint overlay color
     const tempTintOverlay = useMemo(() => {
       const { temperature = 0, tint = 0 } = adjustments;
@@ -1288,8 +1245,413 @@ const ImageCanvas = memo(
       return `inset(${top}% ${right}% ${bottom}% ${left}%)`;
     }, [adjustments.crop, adjustments.orientationSteps, selectedImage?.width, selectedImage?.height]);
 
+    // --- Curve / SVG Filter Generator ---
+
+    // Simple Monotone Cubic Spline Interpolation for smooth curves
+    const interpolateCurve = (points: Coord[]): number[] => {
+      // Safety check
+      if (!points || points.length === 0) {
+        // Return linear identity if no points
+        const identity = new Array(256);
+        for (let i = 0; i < 256; i++) identity[i] = i / 255;
+        return identity;
+      }
+
+      // Clone to avoid mutating prop
+      const sortedPoints = [...points].sort((a, b) => a.x - b.x);
+
+      // Ensure endpoints 0,0 and 255,255 exist (or extend)
+      if (sortedPoints[0].x > 0) sortedPoints.unshift({ x: 0, y: 0 });
+      if (sortedPoints[sortedPoints.length - 1].x < 255) sortedPoints.push({ x: 255, y: 255 });
+
+      const n = sortedPoints.length;
+      const x = sortedPoints.map((p) => p.x);
+      const y = sortedPoints.map((p) => p.y);
+      const m = new Array(n).fill(0);
+      const dx = new Array(n - 1).fill(0);
+      const dy = new Array(n - 1).fill(0);
+      const slope = new Array(n - 1).fill(0);
+
+      for (let i = 0; i < n - 1; i++) {
+        dx[i] = x[i + 1] - x[i];
+        dy[i] = y[i + 1] - y[i];
+        slope[i] = dx[i] !== 0 ? dy[i] / dx[i] : 0;
+      }
+
+      // Calculate slopes
+      m[0] = slope[0];
+      m[n - 1] = slope[n - 2];
+      for (let i = 0; i < n - 1; i++) {
+        if (slope[i] * slope[i - 1] <= 0) m[i] = 0;
+        else {
+          m[i] = (slope[i] + slope[i - 1]) / 2;
+        }
+      }
+
+      const table = [];
+      let currentPoint = 0;
+
+      for (let i = 0; i <= 255; i++) {
+        // Find segment
+        while (currentPoint < n - 1 && x[currentPoint + 1] < i) {
+          currentPoint++;
+        }
+
+        const p0 = sortedPoints[currentPoint];
+        const p1 = sortedPoints[currentPoint + 1];
+
+        if (!p1) {
+          table.push(y[n - 1] / 255);
+          continue;
+        }
+
+        const h = p1.x - p0.x;
+        const t = h !== 0 ? (i - p0.x) / h : 0;
+        const t2 = t * t;
+        const t3 = t2 * t;
+
+        // Hermite basis functions
+        const h00 = 2 * t3 - 3 * t2 + 1;
+        const h10 = t3 - 2 * t2 + t;
+        const h01 = -2 * t3 + 3 * t2;
+        const h11 = t3 - t2;
+
+        // Interpolated y
+        let iy = h00 * p0.y + h10 * h * m[currentPoint] + h01 * p1.y + h11 * h * m[currentPoint + 1];
+        iy = Math.max(0, Math.min(255, iy));
+        table.push(iy / 255);
+      }
+      return table;
+    };
+
+    // Generate unique ID for this instance to avoid filter conflicts
+    const filterId = useMemo(() => `rapidraw-filter-${Math.random().toString(36).substr(2, 9)}`, []);
+
+    const svgFilterData = useMemo(() => {
+      // Curve Calculation
+      const {
+        curves = { red: [], green: [], blue: [], luma: [] }, // Default empty if undefined
+
+        highlights = 0,
+        shadows = 0,
+        whites = 0,
+        blacks = 0,
+        sharpness = 0,
+        structure = 0,
+        chromaticAberrationRedCyan = 0,
+        chromaticAberrationBlueYellow = 0,
+        colorGrading,
+        colorCalibration,
+      } = adjustments;
+
+      // --- Color Grading Helper ---
+      // We need to convert HSL (Hue, Sat, Lum) to RGB offsets for shadows/mids/highs
+      const hslToRgbDiff = (h: number, s: number, l: number) => {
+        // Simple approximation: HSL to RGB, then subtract neutral gray to get "diff"
+        // h: 0-360, s: 0-1, l: -1 to 1 (luminance offset)
+        if (s === 0) return { r: 0, g: 0, b: 0 };
+
+        const c = (1 - Math.abs(2 * 0.5 - 1)) * s; // Fixed L=0.5 for pure color extraction
+        const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+        const m = 0.5 - c / 2;
+
+        let r = 0,
+          g = 0,
+          b = 0;
+
+        if (0 <= h && h < 60) {
+          r = c;
+          g = x;
+          b = 0;
+        } else if (60 <= h && h < 120) {
+          r = x;
+          g = c;
+          b = 0;
+        } else if (120 <= h && h < 180) {
+          r = 0;
+          g = c;
+          b = x;
+        } else if (180 <= h && h < 240) {
+          r = 0;
+          g = x;
+          b = c;
+        } else if (240 <= h && h < 300) {
+          r = x;
+          g = 0;
+          b = c;
+        } else if (300 <= h && h < 360) {
+          r = c;
+          g = 0;
+          b = x;
+        }
+
+        // Returns the color "push" vector
+        return { r: r + m - 0.5, g: g + m - 0.5, b: b + m - 0.5 };
+      };
+
+      const shad = colorGrading?.shadows || { hue: 0, saturation: 0, luminance: 0 };
+      const mid = colorGrading?.midtones || { hue: 0, saturation: 0, luminance: 0 };
+      const high = colorGrading?.highlights || { hue: 0, saturation: 0, luminance: 0 };
+      const blending = (colorGrading?.blending || 50) / 100;
+      const balance = (colorGrading?.balance || 0) / 100; // -1 to 1
+
+      const shadRGB = hslToRgbDiff(shad.hue, shad.saturation, 0);
+      const midRGB = hslToRgbDiff(mid.hue, mid.saturation, 0);
+      const highRGB = hslToRgbDiff(high.hue, high.saturation, 0);
+
+      const shadowTint = colorCalibration?.shadowsTint || 0; // -100 to 100
+
+      // Debug checking for NaN sources
+      if (Number.isNaN(shadRGB.r) || Number.isNaN(balance)) {
+        console.error('SVG Filter Params NaN:', { shadRGB, midRGB, highRGB, balance, shadowsTint, colorGrading });
+      }
+
+      // Base Arrays (Linear)
+      // We start with the User Defined Curve Points
+      // And we combine "Basic" tweaks (Highlights/Shadows) by modifying the curve logic slightly
+      // Or simpler: Just calculate the user curve, then apply highlights/shadows math to the table.
+
+      const applyTone = (val: number, channel: 'r' | 'g' | 'b') => {
+        let v = val;
+        // Blacks: offset low end
+        if (blacks !== 0) v += (blacks / 100) * (1 - v) * 0.2;
+        // Whites: offset high end
+        if (whites !== 0) v += (whites / 100) * v * 0.2;
+
+        // basic tonality
+        if (shadows !== 0) {
+          const s = shadows / 100;
+          if (v < 0.5) v += s * (0.5 - Math.abs(v - 0.25) * 2) * 0.3;
+        }
+
+        if (highlights !== 0) {
+          const h = highlights / 100;
+          if (v > 0.5) v += h * (0.5 - Math.abs(v - 0.75) * 2) * 0.3;
+        }
+
+        // --- Color Grading Application ---
+        // Range definitions (approximate)
+        // Shadows: 0 - 0.5 (Peak 0)
+        // Highlights: 0.5 - 1 (Peak 1)
+        // Midtones: 0.2 - 0.8 (Peak 0.5)
+
+        // Balance shifts the center point.
+        const balOffset = balance * 0.2;
+
+        // Weights
+        const lum = v;
+
+        // Shadows Weight: 1 at 0, 0 at ~0.5 + balance
+        let wS = Math.max(0, 1 - lum / (0.5 + balOffset));
+        wS = wS * wS; // squared for falloff
+
+        // Highlights Weight: 1 at 1, 0 at ~0.5 + balance
+        let wH = Math.max(0, (lum - (0.5 + balOffset)) / (1 - (0.5 + balOffset)));
+        wH = wH * wH;
+
+        // Midtones
+        let wM = 1 - Math.abs(lum - 0.5) * 2;
+        wM = Math.max(0, wM);
+
+        // Apply
+        let gradeOffset = 0;
+        if (channel === 'r') gradeOffset = shadRGB.r * wS + midRGB.r * wM + highRGB.r * wH;
+        if (channel === 'g') gradeOffset = shadRGB.g * wS + midRGB.g * wM + highRGB.g * wH;
+        if (channel === 'b') gradeOffset = shadRGB.b * wS + midRGB.b * wM + highRGB.b * wH;
+
+        v += gradeOffset * 2; // *2 to make it more visible
+
+        // --- Color Calibration (Shadow Tint only) ---
+        if (channel === 'g' && shadowTint !== 0 && v < 0.5) {
+          // Green-Magenta shift in shadows
+          // +Tint = Magenta (Remove Green), -Tint = Green (Add Green)
+          // Applied to G channel
+          const tintStr = shadowTint / 100;
+          // Mask to shadows
+          const tintWeight = Math.max(0, 1 - v * 2);
+          v -= tintStr * tintWeight * 0.1;
+        }
+
+        return Math.max(0, Math.min(1, v));
+      };
+
+      const lumaTable = interpolateCurve([...(curves?.luma || [])]);
+      const mapCurve = (channelTable: number[]) => {
+        return channelTable.map((val) => {
+          // Map 0-1 value to 0-255 index
+          const index = Math.max(0, Math.min(255, Math.round(val * 255)));
+          return lumaTable[index];
+        });
+      };
+
+      const redTable = mapCurve(interpolateCurve([...(curves?.red || [])]))
+        .map((v) => applyTone(v, 'r'))
+        .join(' ');
+      const greenTable = mapCurve(interpolateCurve([...(curves?.green || [])]))
+        .map((v) => applyTone(v, 'g'))
+        .join(' ');
+      const blueTable = mapCurve(interpolateCurve([...(curves?.blue || [])]))
+        .map((v) => applyTone(v, 'b'))
+        .join(' ');
+
+      // Sharpen Kernel
+      let sharpenEl = null;
+      let totalSharpness = sharpness + structure;
+      if (totalSharpness > 0) {
+        const s = totalSharpness / 20;
+        const k = -s;
+        const c = 1 + 4 * s;
+        // Basic sharpen kernel - can introduce artifacts if too strong
+        const matrix = `0 ${k} 0 ${k} ${c} ${k} 0 ${k} 0`;
+        sharpenEl = <feConvolveMatrix order="3" kernelMatrix={matrix} preserveAlpha="true" result="sharpened" />;
+      }
+
+      // Chromatic Aberration
+      let chromAbEl = null;
+      if (Math.abs(chromaticAberrationRedCyan) > 0 || Math.abs(chromaticAberrationBlueYellow) > 0) {
+        const dxR = chromaticAberrationRedCyan / 5;
+        const dxB = chromaticAberrationBlueYellow / 5;
+
+        // We need to split channels from curvesResult (or sharpened if applied first, but we apply CA first usually for simplicity here)
+        // Actually best order: Curves -> CA -> Sharpen
+
+        chromAbEl = (
+          <>
+            <feOffset dx={dxR} dy={0} in="curvesResult" result="redShift" />
+            <feOffset dx={dxB} dy={0} in="curvesResult" result="blueShift" />
+
+            <feColorMatrix type="matrix" values="1 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 1 0" in="redShift" result="R" />
+            <feColorMatrix
+              type="matrix"
+              values="0 0 0 0 0  0 1 0 0 0  0 0 0 0 0  0 0 0 1 0"
+              in="curvesResult"
+              result="G"
+            />
+            <feColorMatrix
+              type="matrix"
+              values="0 0 0 0 0  0 0 0 0 0  0 0 1 0 0  0 0 0 1 0"
+              in="blueShift"
+              result="B"
+            />
+
+            <feComposite operator="arithmetic" k1="0" k2="1" k3="1" k4="0" in="R" in2="G" result="RG" />
+            <feComposite operator="arithmetic" k1="0" k2="1" k3="1" k4="0" in="RG" in2="B" result="RGB" />
+          </>
+        );
+      }
+
+      return { redTable, greenTable, blueTable, sharpenEl, chromAbEl, hasCA: !!chromAbEl, filterId };
+    }, [
+      adjustments.curves,
+      adjustments.highlights,
+      adjustments.shadows,
+      adjustments.whites,
+      adjustments.blacks,
+      adjustments.sharpness,
+      adjustments.structure,
+      adjustments.colorGrading,
+      adjustments.colorCalibration,
+      adjustments.chromaticAberrationRedCyan,
+      adjustments.chromaticAberrationBlueYellow,
+      filterId,
+    ]);
+
+    const imageFilters = useMemo(() => {
+      const {
+        brightness = 0,
+        contrast = 0,
+        exposure = 0,
+        saturation = 0,
+        enableNegativeConversion = false,
+        sharpness = 0,
+        vibrance = 0,
+        clarity = 0,
+        dehaze = 0,
+      } = adjustments;
+
+      // Brightness/Exposure:
+      // Dehaze darkens image slightly (-dehaze/400)
+      const bVal = 1 + brightness / 100 + exposure / 2 - dehaze / 400;
+
+      // Contrast:
+      // Add Clarity and Dehaze to contrast (scaled down)
+      // Clarity is usually local contrast, but global contrast is a fair shim.
+      const contrastVal = 1 + (contrast + clarity / 2 + dehaze / 2) / 100;
+
+      // Saturation:
+      const saturationVal = 1 + (saturation + vibrance) / 100;
+
+      // Blur (negative sharpness)
+      const blurVal = sharpness < 0 ? Math.abs(sharpness) / 20 : 0;
+
+      const filters = [
+        `brightness(${Math.max(0, bVal)})`,
+        `contrast(${Math.max(0, contrastVal)})`,
+        `saturate(${Math.max(0, saturationVal)})`,
+        `blur(${blurVal}px)`,
+      ];
+
+      // Append our custom SVG filter
+      filters.push(`url('#${filterId}')`);
+
+      if (enableNegativeConversion) {
+        filters.push('invert(1)');
+      }
+
+      return filters.join(' ');
+    }, [
+      adjustments.brightness,
+      adjustments.contrast,
+      adjustments.exposure,
+      adjustments.saturation,
+      adjustments.vibrance,
+      adjustments.sharpness,
+      adjustments.enableNegativeConversion,
+      filterId,
+      // Re-trigger if curve changes (even if handled in SVG, the component re-renders)
+    ]);
+
     return (
       <div className="relative" style={{ width: '100%', height: '100%' }}>
+        {/* Helper SVG for Advanced Filters */}
+        <svg
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            top: 0,
+            left: 0,
+            zIndex: -1,
+            opacity: 0, // Keep it visually hidden but layout present
+          }}
+        >
+          <filter id={filterId} x="-20%" y="-20%" width="140%" height="140%" primitiveUnits="userSpaceOnUse">
+            {/* 1. Curves & Tones */}
+            <feComponentTransfer in="SourceGraphic" result="curvesResult">
+              <feFuncR type="table" tableValues={svgFilterData.redTable} />
+              <feFuncG type="table" tableValues={svgFilterData.greenTable} />
+              <feFuncB type="table" tableValues={svgFilterData.blueTable} />
+            </feComponentTransfer>
+
+            {/* 2. Chromatic Aberration */}
+            {svgFilterData.hasCA ? svgFilterData.chromAbEl : null}
+
+            {/* 3. Sharpening */}
+            {svgFilterData.sharpenEl ? (
+              React.cloneElement(svgFilterData.sharpenEl, { in: svgFilterData.hasCA ? 'RGB' : 'curvesResult' })
+            ) : svgFilterData.hasCA ? (
+              <feMerge>
+                <feMergeNode in="RGB" />
+              </feMerge>
+            ) : (
+              <feMerge>
+                <feMergeNode in="curvesResult" />
+              </feMerge>
+            )}
+          </filter>
+        </svg>
+
         <div
           className="absolute inset-0 w-full h-full transition-opacity duration-200 flex items-center justify-center"
           style={{

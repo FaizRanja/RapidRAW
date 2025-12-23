@@ -32,7 +32,7 @@ export function usePresets(currentAdjustments: Adjustments) {
     try {
       const loadedPresets: Array<UserPreset> = await invoke(Invokes.LoadPresets);
       console.log(loadedPresets);
-      setPresets(loadedPresets);
+      setPresets(loadedPresets || []);
     } catch (error) {
       console.error('Failed to load presets:', error);
       setPresets([]);

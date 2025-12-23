@@ -82,7 +82,7 @@ const CommunityPage = ({ onBackToLibrary, imageList, currentFolderPath }: Commun
       setIsLoading(true);
       try {
         const communityPresets: CommunityPreset[] = await invoke(Invokes.FetchCommunityPresets);
-        setPresets(communityPresets);
+        setPresets(communityPresets || []);
       } catch (error) {
         console.error('Failed to fetch community presets:', error);
       } finally {
